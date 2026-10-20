@@ -1,0 +1,19 @@
+@model NexusFreelance.Web.ViewModels.PortfolioItemForm
+@{ ViewBag.Title = "Sửa Portfolio"; }
+<div class="page-head"><span class="eyebrow">FREELANCER PORTFOLIO</span><h1>Sửa dự án mẫu</h1></div>
+<section class="panel section-small">
+    @using (Html.BeginForm("EditPortfolio", "Profile", new { id = ViewBag.ItemId }, FormMethod.Post, new { @class = "form-grid" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(false, "", new { @class = "alert danger" })
+        <div><label for="Role">Vai trò trong dự án</label>@Html.TextBoxFor(m => m.Role, new { maxlength = "100", list = "role-suggestions" })<datalist id="role-suggestions">@foreach (var role in NexusFreelance.Web.Services.IndustryCatalog.Roles) { <option value="@role"></option> }</datalist></div>
+        <div><label for="Skills">Kỹ năng / công cụ</label>@Html.TextBoxFor(m => m.Skills, new { maxlength = "300" })</div>
+        <div><label for="Outcome">Kết quả và sản phẩm bàn giao</label>@Html.TextAreaFor(m => m.Outcome, new { maxlength = "1000", rows = "3" })</div>
+        <div><label for="ProjectId">Liên kết dự án đã hoàn thành (tùy chọn)</label>@Html.DropDownListFor(m => m.ProjectId, new SelectList(ViewBag.CompletedProjects, "Id", "Title", Model.ProjectId), "Không liên kết dự án trên NexusFreelance")</div>
+        <div><label for="Title">Tên dự án</label>@Html.TextBoxFor(m => m.Title, new { maxlength = "150", required = "required" })</div>
+        <div><label for="Summary">Mô tả</label>@Html.TextAreaFor(m => m.Summary, new { maxlength = "1500", rows = "4", required = "required" })</div>
+        <div><label for="Url">Đường dẫn HTTPS</label>@Html.TextBoxFor(m => m.Url, new { type = "url", pattern = "https://.*", maxlength = "1000", required = "required" })</div>
+        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        <a class="btn btn-outline" href="@Url.Action("Index")">Trở về hồ sơ</a>
+    }
+</section>

@@ -1,0 +1,18 @@
+@model NexusFreelance.Web.Controllers.ClientProfileForm
+@{ ViewBag.Title = "Hồ sơ khách hàng"; }
+<div class="page-head"><span class="eyebrow">CLIENT PROFILE</span><h1>Hồ sơ khách hàng</h1><p>Giới thiệu rõ nhu cầu hợp tác, đơn vị và cách làm việc để ứng viên hiểu dự án của bạn.</p></div>
+@Html.Partial("_AvatarPicker")
+<section class="panel form-panel">@using (Html.BeginForm("Index", "ClientProfile", FormMethod.Post)) {
+    @Html.AntiForgeryToken() @Html.ValidationSummary(false, "", new { @class = "error-list" })
+    <label for="ClientType">Loại khách hàng</label><select id="ClientType" name="ClientType"><option value="Individual" @(Model.ClientType == "Individual" ? "selected" : "")>Cá nhân</option><option value="Business" @(Model.ClientType == "Business" ? "selected" : "")>Doanh nghiệp</option></select>
+    <label for="CompanyName">Tên công ty (bắt buộc với doanh nghiệp)</label>@Html.TextBoxFor(m => m.CompanyName, new { maxlength = "180" })
+    <label for="Location">Địa điểm / múi giờ</label>@Html.TextBoxFor(m => m.Location, new { maxlength = "120", placeholder = "Hà Nội · UTC+7" })
+    <label for="Website">Website HTTPS (tùy chọn)</label>@Html.TextBoxFor(m => m.Website, new { type = "url", maxlength = "1000", placeholder = "https://..." })
+    <label for="About">Giới thiệu và nhu cầu hợp tác</label>@Html.TextAreaFor(m => m.About, new { maxlength = "1000", rows = "5", placeholder = "Lĩnh vực hoạt động, quy mô, mục tiêu dự án, sản phẩm mong đợi, cách nghiệm thu và giờ phản hồi." })
+    <button class="btn btn-primary" type="submit">Lưu hồ sơ khách hàng</button>
+}</section>
+<section class="panel section-small"><h2>Đánh giá từ Freelancer</h2>
+@{ var reviews = (List<NexusFreelance.Web.Models.ClientReview>)ViewBag.Reviews; }
+@if (!reviews.Any()) { <p class="empty">Chưa có đánh giá sau dự án hoàn thành.</p> }
+@foreach (var review in reviews) { <div class="list-item"><div><strong>@review.Freelancer.Name · @review.Rating/5</strong><p>@review.Comment</p><small>@review.Project.Title · @review.CreatedAtUtc.ToString("dd/MM/yyyy")</small></div></div> }
+</section>

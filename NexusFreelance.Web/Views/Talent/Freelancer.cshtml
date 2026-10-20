@@ -1,0 +1,43 @@
+@model NexusFreelance.Web.ViewModels.PublicFreelancerPage
+@using System.Linq
+@{ ViewBag.Title = Model.Freelancer.Name; }
+<div class="page-head talent-head">
+    <span class="eyebrow">HỒ SƠ FREELANCER</span>
+    @Html.Partial("_Avatar", new NexusFreelance.Web.ViewModels.AvatarView {Id=Model.Freelancer.Id, Name=Model.Freelancer.Name, Size="large"})
+    <h1>@Model.Freelancer.Name</h1>
+    <p class="pill">@(string.IsNullOrWhiteSpace(Model.Freelancer.CoreRole) ? "Chuyên gia tự do" : Model.Freelancer.CoreRole)</p>
+    <p>@(string.IsNullOrWhiteSpace((string)ViewBag.SelectedRoles) ? "Chưa chọn vai trò đã xác minh" : (string)ViewBag.SelectedRoles)</p>
+    <p class="muted">@(Model.Freelancer.IsAvailable ? "● Đang sẵn sàng nhận dự án" : "Hiện chưa nhận dự án mới")</p>
+    <a href="@Url.Action("Index")">← Khám phá chuyên gia</a>
+</div>
+@{ var details = (NexusFreelance.Web.Models.FreelancerProfile)ViewBag.ProfileDetails; }
+<section class="panel section-small"><div class="heading-row"><div><strong>@details.Industry</strong><p>@details.Location · @details.YearsExperience năm kinh nghiệm · Dự án từ @details.MinimumProjectBudget.ToString("N0") VND</p></div>
+@if((string)ViewBag.CurrentRole == "Client") { using(Html.BeginForm("Contact", "Messages", new { freelancerId = Model.Freelancer.Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button class="btn btn-primary" type="submit">Liên hệ · Mở hội thoại</button> } } else if(!User.Identity.IsAuthenticated) { <a class="btn btn-primary" href="@Url.Action("Login", "Account")">Đăng nhập Client để liên hệ</a> }
+</div></section>
+<section class="panel section-small"><h2>Giới thiệu</h2><p class="description">@(string.IsNullOrWhiteSpace(Model.Freelancer.Bio) ? "Chưa có phần giới thiệu." : Model.Freelancer.Bio)</p></section>
+<section class="panel section-small">
+    <div class="heading-row"><h2>Portfolio</h2><span class="pill">@Model.Portfolio.Count dự án mẫu</span></div>
+    <p class="muted">Portfolio do Freelancer tự khai báo, chưa được NexusFreelance xác minh độc lập.</p>
+    @if (!Model.Portfolio.Any()) { <div class="empty">Chưa có Portfolio công khai.</div> }
+    @foreach (var item in Model.Portfolio)
+    {
+        <div class="list-item"><div><h3>@item.Title</h3><p class="description">@item.Summary</p><p class="muted">@item.Role · @item.Skills</p><p>@item.Outcome</p></div>
+            <a class="btn btn-outline" href="@item.Url" rel="noopener noreferrer nofollow" target="_blank">Xem dự án ↗</a></div>
+    }
+</section>
+<section class="panel section-small">
+    <h2>Chứng chỉ nội bộ NexusFreelance</h2>
+    @if (!Model.Badges.Any()) { <p class="muted">Chưa có chứng chỉ nội bộ còn hiệu lực.</p> }
+    @foreach (var badge in Model.Badges)
+    { <div class="list-item"><strong>@badge.SkillTrack.Title</strong><span class="pill">Mức nền tảng · @badge.EvidenceAttempt.Percent% · @badge.IssuedAtUtc.ToString("dd/MM/yyyy")</span></div> }
+</section>
+<section class="panel section-small">
+    <h2>Chứng chỉ ngoài được duyệt</h2>
+    @if (!Model.Certifications.Any()) { <p class="muted">Chưa có chứng chỉ ngoài còn hiệu lực được xác minh.</p> }
+    @foreach (var certificate in Model.Certifications)
+    { <div class="list-item"><div><strong>@certificate.Name</strong><p class="muted">@certificate.Issuer · Cấp ngày @certificate.IssuedOn.ToString("dd/MM/yyyy")</p></div><span class="pill">Đã xác minh</span></div> }
+</section>
+
+<section class="panel section-small"><h2>Kỹ năng được quản trị xác minh</h2><p class="muted">Chỉ hiển thị xác minh còn hiệu lực. Kỹ năng nhóm là hợp các kỹ năng của thành viên hoạt động và cho phép hiển thị hồ sơ.</p>@foreach(var claim in (List<NexusFreelance.Web.Models.SkillClaim>)ViewBag.VerifiedClaims){<div class="list-item"><strong>@claim.Skill.Title · Mức @claim.Level/5</strong><span>@claim.User.Name · @claim.YearsExperience năm</span></div>}</section>
+
+<section class="panel section-small"><h2>Năng lực xác minh &amp; Skill DNA</h2>@Html.Partial("_SkillRadar", (System.Collections.Generic.List<NexusFreelance.Web.ViewModels.VerifiedSkillRow>)ViewBag.CoreSkills)</section>

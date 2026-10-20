@@ -1,0 +1,74 @@
+@model NexusFreelance.Web.ViewModels.DashboardPage
+@{
+    ViewBag.Title = "Tổng quan";
+    var isClient = Model.Role == "Client";
+}
+<div class="dashboard-heading">
+    <div><div class="eyebrow">@DateTime.Now.ToString("dddd, dd/MM/yyyy", new System.Globalization.CultureInfo("vi-VN")) · NEXUSFREELANCE</div>
+        <div class="profile-identity">@Html.Partial("_Avatar", new NexusFreelance.Web.ViewModels.AvatarView {Id=(int)ViewBag.CurrentUserId,Name=Model.Name})<h1>Xin chào, @Model.Name</h1></div>
+        <p class="muted">@(isClient ? "Theo dõi tiến độ tuyển dụng và vận hành các dự án của bạn." : "Cập nhật đề xuất, nhiệm vụ và cơ hội cộng tác mới nhất.")</p>
+    </div>
+    <a class="btn btn-primary" href="@(isClient ? Url.Action("Create", "Projects") : Url.Action("Index", "Home"))">@(isClient ? "+ Tạo dự án" : "Khám phá dự án ↗")</a>
+</div>
+@Html.Partial("_WorkGuide", Model)
+@if(Model.Role == "Freelancer") {
+    var profile = ViewBag.ProfileSummary as NexusFreelance.Web.Models.FreelancerProfile;
+    var coreSkills = ViewBag.CoreSkills as System.Collections.Generic.List<NexusFreelance.Web.ViewModels.VerifiedSkillRow>;
+    <section class="panel section-small"><div class="heading-row"><div><span class="eyebrow">HỒ SƠ CHUYÊN MÔN</span><h2>@(profile == null ? "Hoàn thiện hồ sơ để được ghép dự án" : profile.CoreRole)</h2></div><a class="btn btn-outline" href="@Url.Action("Index", "Profile")">Cập nhật hồ sơ</a></div>
+    @if(profile != null) { <p>@profile.Industry · @profile.YearsExperience năm kinh nghiệm · @(profile.IsAvailable ? "Đang nhận việc" : "Tạm ngưng nhận việc")</p><p class="description">@(string.IsNullOrEmpty(profile.Bio) ? "Chưa có giới thiệu." : profile.Bio.Length > 160 ? profile.Bio.Substring(0,160) + "…" : profile.Bio)</p>if(profile.IsPublic != false) { <a class="btn btn-outline" href="@Url.Action("Freelancer", "Talent", new { id = (int)ViewBag.CurrentUserId })">Xem hồ sơ công khai</a> } else { <span class="pill">Hồ sơ đang ẩn</span> } }
+    <p class="form-help">@(string.IsNullOrWhiteSpace((string)ViewBag.SelectedRoles) ? "Chọn vai trò chính và phụ trong hồ sơ sau khi xác minh kỹ năng." : (string)ViewBag.SelectedRoles)</p><div class="skill-chips">@foreach(var skill in coreSkills.Take(4)) { <span class="pill">@skill.Title · @skill.Level/5 · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(skill.Level)</span> }</div><p class="muted">Năng lực được tính từ chứng chỉ và minh chứng đã xác minh còn hiệu lực.</p></section>
+}
+
+<section class="panel finance-summary" aria-label="Ngân sách và số dư">
+    <div class="heading-row"><h2>Ngân sách &amp; số dư</h2><a class="text-link" href="@Url.Action("Index", "Wallet")">Quản lý ví →</a></div>
+    <div class="balance-grid @(isClient ? "" : "balance-pair")">
+        @if (isClient) { <div><small>Tổng ngân sách dự án</small><strong class="budget-value">@Model.TotalBudget.ToString("N0") <span class="currency">VND</span></strong></div> }
+        <div><small>Số dư khả dụng</small><strong class="budget-value">@Model.WalletBalance.ToString("N0") <span class="currency">VND</span></strong></div>
+        <div><small>Đang giữ ký quỹ</small><strong class="budget-value">@Model.WalletHeld.ToString("N0") <span class="currency">VND</span></strong></div>
+    </div>
+</section>
+<details class="dashboard-data"><summary>Thống kê chi tiết</summary><section class="metrics" aria-label="Thống kê">
+    <article class="metric"><span class="metric-icon">@Html.Partial("_Icon", "briefcase")</span><div class="metric-label">@(isClient ? "Tổng dự án" : "Đề xuất đã gửi")</div><strong>@Model.Projects</strong><div class="metric-foot">Dữ liệu từ hệ thống</div></article>
+    <article class="metric"><span class="metric-icon">@Html.Partial("_Icon", "chart")</span><div class="metric-label">Dự án đang hoạt động</div><strong>@Model.ActiveProjects</strong><div class="metric-foot">@(isClient ? "Đang tuyển / thực hiện" : "Đang tham gia")</div></article>
+    <article class="metric"><span class="metric-icon">@Html.Partial("_Icon", "document")</span><div class="metric-label">@(isClient ? "Đề xuất chờ duyệt" : "Đề xuất đang chờ")</div><strong>@Model.PendingProposals</strong><div class="metric-foot">Cần theo dõi</div></article>
+    <article class="metric"><span class="metric-icon">@Html.Partial("_Icon", "grid")</span><div class="metric-label">Nhiệm vụ chưa xong</div><strong>@Model.OpenTasks</strong><div class="metric-foot">Trong workspace được phép xem</div></article>
+</section>
+</details>
+<div class="dashboard-cols">
+    <section class="panel dash-panel">
+        <div class="heading-row"><div><div class="eyebrow">CẬP NHẬT MỚI</div><h2>@(isClient ? "Dự án gần đây" : "Dự án đang tham gia")</h2></div><a class="text-link" href="@(isClient ? Url.Action("Mine", "Projects") : Url.Action("Mine", "Proposals"))">Xem tất cả →</a></div>
+        @if (!Model.RecentProjects.Any())
+        {
+            <div class="empty dash-empty"><strong>Chưa có dự án nào</strong><p>@(isClient ? "Tạo dự án để bắt đầu tuyển thành viên." : "Tìm dự án phù hợp và gửi đề xuất của bạn.")</p><a class="btn btn-outline" href="@(isClient ? Url.Action("Create", "Projects") : Url.Action("Index", "Home"))">Bắt đầu ngay →</a></div>
+        }
+        @foreach (var p in Model.RecentProjects)
+        {
+            <article class="dash-project"><span class="project-symbol">@Html.Partial("_Icon", "briefcase")</span><div class="dash-project-text"><h3>@p.Title</h3><div class="muted">@p.CreatedAtUtc.ToString("dd/MM/yyyy") · Ngân sách: <strong class="budget-value">@p.Budget.ToString("N0") VND</strong></div></div><span class="pill">@NexusFreelance.Web.Services.ContractPresentation.Status(p.Status)</span><a class="text-link" href="@(isClient ? Url.Action("Manage", "Projects", new { id = p.Id }) : p.WorkspaceId.HasValue ? Url.Action("Index", "Workspace", new { id = p.WorkspaceId }) : Url.Action("Details", "Projects", new { id = p.Id }))">Mở ↗</a></article>
+        }
+    </section>
+    <aside class="dash-right">
+        <section class="panel dash-panel">
+            <div class="eyebrow">CẬP NHẬT KHÁC</div><h2>Thông báo &amp; liên kết</h2>
+            <a class="action-row" href="@Url.Action("Index", "Notifications")"><span class="action-symbol">@Html.Partial("_Icon", "bell")</span><span>Thông báo chưa đọc</span><strong>@Model.UnreadNotifications →</strong></a>
+            @if (!isClient) { <a class="action-row" href="@Url.Action("Index", "Groups")"><span class="action-symbol">@Html.Partial("_Icon", "users")</span><span>Lời mời nhóm</span><strong>@Model.Invitations →</strong></a> }
+        </section>
+        @if (!isClient)
+        {
+            <section class="panel dash-panel"><div class="eyebrow">NHIỆM VỤ ĐƯỢC GIAO</div><h2>Tiến độ công việc</h2>
+                @if (!Model.MyTasks.Any()) { <p class="muted">Bạn chưa có nhiệm vụ nào đang chờ.</p> }
+                @foreach (var task in Model.MyTasks)
+                {
+                    <a class="task-row" href="@Url.Action("Index", "Workspace", new { id = task.WorkspaceId })"><span><strong>@task.Title</strong><small>@NexusFreelance.Web.Services.WorkLabels.Task(task.Status) · @NexusFreelance.Web.Services.WorkLabels.Priority(task.Priority) @(task.DueAtUtc.HasValue ? "· " + task.DueAtUtc.Value.ToString("dd/MM") : "")</small></span><span>↗</span></a>
+                }
+            </section>
+        }
+        else
+        {
+            <section class="panel dash-promo"><div class="eyebrow">TẠO DỰ ÁN</div><h2>Từ ý tưởng đến hợp đồng</h2><p>Nhập yêu cầu hoặc dùng AI Job Studio ngay trong bước tạo dự án, rồi kiểm tra ngân sách và vai trò trước khi công bố.</p><a class="btn btn-dark" href="@Url.Action("Create", "Projects")">Tạo dự án mới →</a></section>
+        }
+    </aside>
+</div>
+
+@if(Model.Role == "Freelancer") {
+    <section class="panel section-small"><span class="eyebrow">DỰA TRÊN CORE SKILL CỦA BẠN</span><h2>Dự án phù hợp đang tuyển</h2>@Html.Partial("_MatchCards", (System.Collections.Generic.List<NexusFreelance.Web.ViewModels.MatchCard>)ViewBag.RecommendedProjects)</section>
+}

@@ -1,0 +1,8 @@
+@{ ViewBag.Title = "Không có quyền thực hiện"; }
+<section class="panel form-panel permission-state">
+    @Html.Partial("_Icon", "lock-keyhole")
+    <h1>Trang này cần quyền truy cập phù hợp</h1>
+    <p>Bạn cần là khách hàng hoặc thành viên được ghi trong hợp đồng để làm việc tại đây. Tham gia nhóm hoặc xem dự án công khai chưa cấp quyền vào hợp đồng.</p>
+    <p>Nếu vừa thay đổi tài khoản hoặc quyền, hãy đăng nhập lại đúng vai trò.</p>
+    <div class="toolbar"><a class="btn btn-primary" href="@Url.Action("Index", "Contracts")">Hợp đồng của tôi</a><a class="btn btn-outline" href="@Url.Action("Login", "Account")">Chọn lại tài khoản</a></div>
+</section>

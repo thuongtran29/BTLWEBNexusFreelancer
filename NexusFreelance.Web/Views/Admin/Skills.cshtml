@@ -1,0 +1,35 @@
+@model NexusFreelance.Web.ViewModels.AdminSkillCatalogPage
+@{ ViewBag.Title = "Danh mục kỹ năng"; }
+<section class="page-header"><h1>Danh mục kỹ năng</h1><p>Quản lý nội dung kiểm tra nội bộ theo nhóm ngành. Mở từng kỹ năng để chỉnh sửa hoặc quản lý ngân hàng câu hỏi.</p></section>
+<section class="panel">
+    <details><summary class="btn btn-outline">＋ Thêm kỹ năng mới</summary>
+    @using (Html.BeginForm("CreateSkill", "Admin", FormMethod.Post, new { @class = "form-grid catalog-editor" })) {
+        @Html.AntiForgeryToken()
+        <div><label for="new-code">Mã kỹ năng</label><input id="new-code" name="Code" required pattern="[A-Za-z][A-Za-z0-9_]*" minlength="3" maxlength="40" aria-describedby="code-help" /><p class="form-help" id="code-help">Bắt đầu bằng chữ; chỉ dùng chữ, số và dấu _. Mã không thể đổi sau khi tạo.</p></div>
+        <div><label for="new-title">Tên kỹ năng</label><input id="new-title" name="Title" required maxlength="120" /></div>
+        <div class="full-width"><label for="new-description">Mô tả</label><textarea id="new-description" name="Description" rows="3" required maxlength="600"></textarea></div>
+        <div><label for="new-keywords">Từ khóa gợi ý</label><input id="new-keywords" name="MatchKeywords" required maxlength="250" /></div>
+        <div><label for="new-industry">Nhóm ngành</label><select id="new-industry" name="Industry">@foreach(var industry in NexusFreelance.Web.Services.IndustryCatalog.All){<option value="@industry">@industry</option>}</select></div>
+        <input type="hidden" name="IsActive" value="true" /><button class="btn btn-primary" type="submit">Tạo kỹ năng</button>
+    }</details>
+</section>
+<div class="catalog-grid">
+@foreach (var track in Model.Tracks) {
+    <article class="card">
+        <div><span class="status-badge @(track.IsActive == false ? "is-neutral" : "")">@(track.IsActive == false ? "Ngừng sử dụng" : "Đang sử dụng")</span><h2>@track.Title</h2><span class="muted">@track.Industry · <code>@track.Code</code></span></div>
+        <p>@track.Description</p>
+        <div><a class="btn btn-primary" href="@Url.Action("Questions", new { id = track.Id })">Quản lý câu hỏi →</a></div>
+        <details class="catalog-edit"><summary class="btn btn-outline" aria-label="Chỉnh sửa kỹ năng @track.Title">Chỉnh sửa kỹ năng ▾</summary>
+        @using (Html.BeginForm("UpdateSkill", "Admin", FormMethod.Post, new { @class = "form-grid catalog-editor" })) {
+            @Html.AntiForgeryToken()<input type="hidden" name="Id" value="@track.Id" />
+            <div class="full-width"><label for="title-@track.Id">Tên kỹ năng</label><input id="title-@track.Id" name="Title" required maxlength="120" value="@track.Title" /></div>
+            <div class="full-width"><label for="description-@track.Id">Mô tả</label><textarea id="description-@track.Id" name="Description" rows="3" required maxlength="600">@track.Description</textarea></div>
+            <div class="full-width"><label for="keywords-@track.Id">Từ khóa gợi ý</label><input id="keywords-@track.Id" name="MatchKeywords" required maxlength="250" value="@track.MatchKeywords" /></div>
+            <div><label for="industry-@track.Id">Nhóm ngành</label><select id="industry-@track.Id" name="Industry">@foreach(var industry in NexusFreelance.Web.Services.IndustryCatalog.All){<option value="@industry" @(track.Industry==industry?"selected":"")>@industry</option>}</select></div>
+            <div><label for="active-@track.Id">Trạng thái danh mục</label><select id="active-@track.Id" name="IsActive"><option value="true" @(track.IsActive!=false?"selected":"")>Đang sử dụng</option><option value="false" @(track.IsActive==false?"selected":"")>Ngừng sử dụng (giữ lịch sử)</option></select></div>
+            <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+        }</details>
+    </article>
+}
+</div>
+

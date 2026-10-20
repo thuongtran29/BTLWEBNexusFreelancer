@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{40E56D9B-AFBA-4282-9C3B-E92EF9B314C7}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>NexusFreelance.Web</RootNamespace>
+    <AssemblyName>NexusFreelance.Web</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <UseIISExpress>true</UseIISExpress>
+    <Use64BitIISExpress>true</Use64BitIISExpress>
+    <IISExpressSSLPort>44391</IISExpressSSLPort>
+    <MvcBuildViews>false</MvcBuildViews>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols><DebugType>full</DebugType><Optimize>false</Optimize><OutputPath>bin\</OutputPath><DefineConstants>DEBUG;TRACE</DefineConstants><WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <DebugType>pdbonly</DebugType><Optimize>true</Optimize><OutputPath>bin\</OutputPath><DefineConstants>TRACE</DefineConstants><WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System"/><Reference Include="System.Core"/><Reference Include="System.Configuration"/><Reference Include="System.Data"/><Reference Include="System.Web"/><Reference Include="System.Web.Extensions"/><Reference Include="System.Net.Http"/><Reference Include="System.ComponentModel.DataAnnotations"/><Reference Include="System.Xml"/><Reference Include="System.Web.Routing"/><Reference Include="System.Security"/><Reference Include="System.Drawing"/><Reference Include="Microsoft.CSharp"/>
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+    <PackageReference Include="Microsoft.AspNet.Razor" Version="3.2.9" />
+    <PackageReference Include="Microsoft.AspNet.WebPages" Version="3.2.9" />
+    <PackageReference Include="Microsoft.Web.Infrastructure" Version="2.0.0" />
+    <PackageReference Include="EntityFramework" Version="6.5.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="**\*.cs" Exclude="obj\**\*;bin\**\*" />
+    <Content Include="Global.asax;Web.config;Views\**\*.cshtml;Views\Web.config;Content\**\*" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="Exists('$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets')" />
+  <!-- A fresh source checkout has no private key file. F5/Build prepares a key
+       on this Windows installation; existing keys are never silently rotated. -->
+  <Target Name="PrepareLocalMachineKey" BeforeTargets="Build"
+          Condition="'$(OS)' == 'Windows_NT' And '$(DesignTimeBuild)' != 'true' And !Exists('$(MSBuildProjectDirectory)\App_Data\machineKey.config')">
+    <Exec Command="&quot;$(SystemRoot)\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\tools\ConfigureMachineKey.ps1&quot; -WebRoot &quot;$(MSBuildProjectDirectory)&quot;" />
+  </Target>
+  <ProjectExtensions><VisualStudio><FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}"><WebProjectProperties><UseIIS>True</UseIIS><AutoAssignPort>False</AutoAssignPort><DevelopmentServerPort>51841</DevelopmentServerPort><DevelopmentServerVPath>/</DevelopmentServerVPath><IISUrl>https://localhost:44391/</IISUrl><UseCustomServer>False</UseCustomServer></WebProjectProperties></FlavorProperties></VisualStudio></ProjectExtensions>
+</Project>

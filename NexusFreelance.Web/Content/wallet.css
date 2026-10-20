@@ -1,0 +1,18 @@
+/* Scoped wallet rules; loaded by wallet views after shared styles, including polish.css. */
+.wallet-topup-form { margin-top:1rem; }
+.wallet-qr-panel { scroll-margin-top:6rem; }
+.wallet-transfer-grid { display:grid; grid-template-columns:minmax(0,18rem) minmax(0,1fr); gap:1.5rem; align-items:start; margin-top:1.25rem; }
+.wallet-transfer-grid figure { margin:0; }
+.wallet-transfer-grid [data-wallet-qr] svg { display:block; width:100%; max-width:18rem; height:auto; background:white; }
+.wallet-transfer-grid [hidden] { display:none; }
+.wallet-transfer-grid figcaption { margin-top:.75rem; font-size:.875rem; }
+.wallet-transfer-details { min-width:0; }
+.wallet-transfer-details dl { display:grid; gap:.5rem; margin:0 0 1rem; }
+.wallet-transfer-details dt { color:var(--muted,#536579); }
+.wallet-transfer-details dd { margin:0 0 .5rem; font-weight:600; overflow-wrap:anywhere; }
+.wallet-transfer-details code { white-space:normal; overflow-wrap:anywhere; }
+.wallet-admin-form { display:grid; gap:.75rem; margin-top:1.25rem; }
+.wallet-admin-form .form-actions { display:flex; flex-wrap:wrap; gap:.75rem; margin:0; }
+.wallet-admin-request p,.wallet-admin-request code { overflow-wrap:anywhere; }
+.wallet-admin-reminder { margin-bottom:1.5rem; }
+@media(max-width:600px) { .wallet-transfer-grid { grid-template-columns:minmax(0,1fr); } }

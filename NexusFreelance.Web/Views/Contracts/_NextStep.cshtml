@@ -1,0 +1,10 @@
+@model NexusFreelance.Web.ViewModels.ContractDetailsPage
+@if(Model.Version.VersionNumber==Model.Contract.CurrentVersion && !Model.IsAdmin) {
+<section class="page-explainer" aria-label="Bước tiếp theo của hợp đồng">
+    @if(Model.Contract.Status=="AwaitingSignatures") { <strong>@(Model.HasConfirmed?"Bạn đã xác nhận điều khoản":"Bước tiếp theo: đọc và xác nhận")</strong><span>@(Model.HasConfirmed?"Đang chờ các bên còn lại đồng ý cùng phiên bản. Công việc chưa bắt đầu.":"Kiểm tra phạm vi, giá, hạn và các mốc, rồi xác nhận ở phần Đội hình & xác nhận.")</span><a href="#contract-signatures">Xem trạng thái xác nhận ↓</a> }
+    else if(Model.Contract.Status=="AwaitingEscrow") { <strong>@(Model.IsOwner?"Bước tiếp theo: ký quỹ mốc đầu":"Đang chờ khách hàng ký quỹ")</strong><span>@(Model.IsOwner?"Mọi bên đã xác nhận. Chọn mốc đầu ở bên dưới và dùng số dư ví hoặc VNPay để bảo đảm tiền.":"Công việc bắt đầu khi mốc đầu đã được bảo đảm. Bạn có thể xem lại điều khoản trong lúc chờ.")</span><a href="#contract-milestones">Xem các mốc thanh toán ↓</a> }
+    else if(Model.Contract.Status=="Active") { <strong>Công việc đang thực hiện</strong><span>Mở không gian làm việc để nhận nhiệm vụ, trao đổi và kiểm tra các bản bàn giao.</span><a href="@Url.Action("Index","Workspace",new{id=Model.WorkspaceId})">Mở không gian làm việc →</a> }
+    else if(Model.Contract.Status=="Disputed") { <strong>Hợp đồng đang tạm dừng vì tranh chấp</strong><span>Theo dõi nội dung và quyết định xử lý bên dưới. Các hợp đồng khác của dự án được quản lý riêng.</span> }
+    else { <strong>Hợp đồng đã kết thúc</strong><span>Bạn vẫn có thể tra cứu điều khoản, xác nhận và lịch sử thanh toán của hợp đồng này.</span> }
+</section>
+}

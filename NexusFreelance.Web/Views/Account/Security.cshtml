@@ -1,0 +1,13 @@
+@model NexusFreelance.Web.Models.UserAccount
+@{ ViewBag.Title = "Tài khoản & bảo mật"; }
+@Html.Partial("_AvatarPicker")
+<section class="panel form-panel"><h1>Tài khoản &amp; bảo mật</h1><p><strong>@Model.Email</strong> · @Model.Role</p>
+<p>Email: @(Model.EmailVerifiedAtUtc.HasValue ? "Đã xác minh" : "Chưa xác minh")</p>
+<p>Mỗi vai trò có hồ sơ và ví riêng. Đăng xuất rồi chọn vai trò khác để sử dụng hồ sơ còn lại.</p>
+@if (Model.Role != "Admin") {
+    if (Model.GoogleSubject == null && !NexusFreelance.Web.Services.GoogleAuthSettings.IsConfigured) { <p class="alert">Liên kết Google chưa sẵn sàng. Bạn vẫn có thể dùng mật khẩu hiện tại.</p> }
+    else if (Model.GoogleSubject == null) {
+        using (Html.BeginForm("GoogleLogin", "Account", FormMethod.Post)) { @Html.AntiForgeryToken()<input type="hidden" name="role" value="@Model.Role" /><input type="hidden" name="link" value="true" /><button class="btn btn-outline" type="submit">Liên kết tài khoản Google cùng email</button> }
+    } else { <p class="pill">Đã liên kết Google</p> }
+}
+<p><a href="@Url.Action("ForgotPassword")">Yêu cầu đổi mật khẩu qua email</a></p></section>

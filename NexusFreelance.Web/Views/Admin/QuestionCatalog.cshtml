@@ -1,0 +1,15 @@
+@using NexusFreelance.Web.Services
+@model NexusFreelance.Web.ViewModels.AdminSkillCatalogPage
+@{ ViewBag.Title = "Ngân hàng câu hỏi"; var counts=(System.Collections.Generic.Dictionary<int,int>)ViewBag.QuestionCounts; }
+<section class="page-head"><span class="eyebrow">QUẢN LÝ BÀI KIỂM TRA NỘI BỘ</span><h1>Ngân hàng câu hỏi</h1><p>Chọn kỹ năng để soạn câu hỏi, đáp án và giải thích. Chỉ ngân hàng có ít nhất 5 câu hỏi mới xuất hiện ở trang bài kiểm tra của Freelancer.</p></section>
+<div class="page-explainer"><strong>Bắt đầu từ kỹ năng</strong><span>1. Chọn kỹ năng</span><span>2. Thêm câu hỏi và giải thích</span><span>3. Kiểm tra nội dung trước khi sử dụng</span><a href="@Url.Action("Skills")">Thêm kỹ năng hoặc xem mục ngừng sử dụng →</a></div>
+@foreach(var industry in IndustryCatalog.All) {
+    var tracks=Model.Tracks.Where(t=>IndustryCatalog.Normalize(t.Industry)==industry).ToList();
+    if(tracks.Count==0){continue;}
+    <section aria-label="@industry"><h2>@industry</h2><div class="admin-work-grid">
+    @foreach(var track in tracks) { var count=counts.ContainsKey(track.Id)?counts[track.Id]:0;
+        <article class="panel"><h3>@track.Title</h3><p>@track.Description</p><p class="muted">@count câu hỏi · @(count>=5?"Đã đủ số lượng để mở bài kiểm tra":"Chưa mở bài kiểm tra; cần ít nhất 5 câu hỏi")</p><a class="btn btn-outline" href="@Url.Action("Questions",new{id=track.Id})">Quản lý câu hỏi →</a></article>
+    }
+    </div></section>
+}
+@if(Model.Tracks.Count==0){<section class="panel empty"><h2>Chưa có kỹ năng đang sử dụng</h2><p>Thêm kỹ năng vào danh mục trước, sau đó quay lại đây để soạn bài kiểm tra.</p><a class="btn btn-primary" href="@Url.Action("Skills")">Mở danh mục kỹ năng →</a></section>}

@@ -1,0 +1,6 @@
+@using NexusFreelance.Web.Services
+@if(PasswordRecoveryService.IsLocalPickupConfigured) {
+    <p class="alert" role="status" data-mail-delivery="pickup">Đây là hộp thư kiểm thử cục bộ: thư chỉ lưu trên máy, chưa gửi tới Gmail hay email thật. Đơn vị vận hành cần bật gửi thư thật để bạn nhận mã trong hộp thư cá nhân.</p>
+} else if(!PasswordRecoveryService.IsDeliveryConfigured) {
+    <p class="alert danger" role="status" data-mail-delivery="unavailable">Dịch vụ gửi email hiện chưa sẵn sàng. Vui lòng liên hệ đơn vị vận hành hoặc thử lại sau.</p>
+}

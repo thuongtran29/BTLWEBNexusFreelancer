@@ -1,0 +1,36 @@
+# Private installation settings, mail and user-generated files
+_local/
+**/App_Data/
+**/.env
+**/.env.*
+*client_secret*.json
+*.dat
+*.eml
+*.pfx
+*.publishsettings
+
+# Visual Studio and generated build/test artifacts
+.vs/
+.vscode/
+**/bin/
+**/obj/
+**/__pycache__/
+**/node_modules/
+tools/_offline/
+tools/_runtime/
+*.user
+*.suo
+*.log
+*.tmp
+*.pyc
+~$*
+.$*
+
+# Local database backups, autosaves and distribution archives
+*.bak
+*.bkp
+*.mdf
+*.ldf
+*.zip
+*.sha256
+BoNopBai/

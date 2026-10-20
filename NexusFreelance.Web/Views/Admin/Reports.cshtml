@@ -1,0 +1,49 @@
+@using NexusFreelance.Web.Services
+@model System.Collections.Generic.List<NexusFreelance.Web.Models.ProjectAbuseReport>
+@{ ViewBag.Title = "Báo cáo vi phạm"; }
+<section class="page-head"><span class="eyebrow">MODERATION</span><h1>Báo cáo vi phạm dự án</h1><p class="muted">@ViewBag.Total báo cáo ở bộ lọc hiện tại. Quyết định được lưu với người kiểm duyệt và thời điểm xử lý.</p></section>
+<div class="panel report-filters" aria-label="Lọc báo cáo">
+    <a class="btn btn-outline" href="@Url.Action("Reports", new { status = "Pending" })">Chờ duyệt</a>
+    <a class="btn btn-outline" href="@Url.Action("Reports", new { status = "Confirmed" })">Đã xác nhận</a>
+    <a class="btn btn-outline" href="@Url.Action("Reports", new { status = "Dismissed" })">Đã bác bỏ</a>
+    <a class="btn btn-outline" href="@Url.Action("Reports", new { status = "All" })">Tất cả</a>
+</div>
+<div class="panel">
+    @if (Model.Count == 0) { <p class="muted">Không có báo cáo nào trong danh sách.</p> }
+    @foreach (var r in Model)
+    {
+        <article class="report-row">
+            <div class="heading-row"><h2>#@r.Id · @r.Project.Title</h2><span class="pill">@r.Status</span></div>
+            <p class="muted">Người gửi: <a href="@Url.Action("UserProfile", new { id = r.ReporterId })">@r.Reporter.Email</a> · @DisplayTime.Vietnam(r.CreatedAtUtc) · @r.Category</p>
+            <p><a href="@Url.Action("UserProfile", new { id = r.Project.ClientId })">Kiểm tra hồ sơ chủ dự án #@r.Project.ClientId</a></p>
+            <p class="description">@r.Details</p>
+            <p><a href="@Url.Action("Details", "Projects", new { id = r.ProjectId })">Xem dự án ↗</a></p>
+            @if (r.Status == "Pending")
+            {
+                <form method="post" action="@Url.Action("ReviewReport")" class="stack">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@r.Id" />
+                    <label for="Decision_@r.Id">Kết quả đánh giá</label>
+                    <select id="Decision_@r.Id" name="Decision" required>
+                        <option value="Confirmed">Xác nhận vi phạm (cần xử lý tiếp nếu thích hợp)</option>
+                        <option value="Dismissed">Không đủ căn cứ</option>
+                    </select>
+                    <label for="Resolution_@r.Id">Lý do quyết định</label>
+                    <textarea id="Resolution_@r.Id" name="Resolution" minlength="5" maxlength="200" rows="3" required></textarea>
+                    <button class="btn btn-primary" type="submit">Lưu quyết định</button>
+                </form>
+            }
+            else
+            {
+                <p>Phản hồi: @r.Resolution</p>
+                <p class="muted">Thời điểm xử lý: @(r.ReviewedAtUtc.HasValue ? DisplayTime.Vietnam(r.ReviewedAtUtc.Value) : "Chưa ghi nhận")</p>
+                if (r.ReviewerId.HasValue) { <p>Người xử lý: <a href="@Url.Action("UserProfile", new { id = r.ReviewerId })">@(r.Reviewer == null ? "Hồ sơ #" + r.ReviewerId : r.Reviewer.Email)</a></p> }
+            }
+        </article>
+    }
+</div>
+<nav class="report-pagination" aria-label="Phân trang báo cáo">
+    @if ((int)ViewBag.Page > 1) { <a class="btn btn-outline" href="@Url.Action("Reports", new { status = ViewBag.Status, page = (int)ViewBag.Page - 1 })">← Trước</a> }
+    <span>Trang @ViewBag.Page / @ViewBag.PageCount</span>
+    @if ((int)ViewBag.Page < (int)ViewBag.PageCount) { <a class="btn btn-outline" href="@Url.Action("Reports", new { status = ViewBag.Status, page = (int)ViewBag.Page + 1 })">Tiếp →</a> }
+</nav>

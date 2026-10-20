@@ -1,0 +1,22 @@
+﻿@model NexusFreelance.Web.Models.DirectConversation
+@using NexusFreelance.Web.ViewModels
+@{
+    var peer = Model.ClientId == (int)ViewBag.CurrentUserId ? Model.Freelancer : Model.Client;
+    ViewBag.Title = "Trao đổi với " + peer.Name;
+    var messages = (System.Collections.Generic.List<NexusFreelance.Web.Models.DirectMessage>)ViewBag.Messages;
+}
+<div class="page-head"><span class="eyebrow">HỘI THOẠI RIÊNG</span><div class="heading-row">@Html.Partial("_Avatar", new AvatarView { Id = peer.Id, Name = peer.Name, Size = "medium" })<h1>@ViewBag.Title</h1></div><p class="muted">@(peer.Role == "Client" ? "Khách hàng" : "Freelancer")</p><a class="btn btn-outline" href="@Url.Action("Index")">Tất cả hội thoại</a></div>
+<section class="panel section-small" data-realtime-channel data-conversation-id="@Model.Id" data-last-message="@(messages.Any() ? messages.Last().Id : 0)" data-history="@(Request.QueryString["before"] != null ? "true" : "false")">
+    <p class="live-status" data-live-status role="status" aria-live="polite"></p>
+    <button class="btn btn-outline live-new-messages" type="button" data-live-jump hidden>Có tin mới · Cuối hội thoại</button>
+    <a class="btn btn-outline live-new-messages" data-live-latest href="@Url.Action("Thread", new { id = Model.Id })" hidden>Về tin nhắn mới nhất</a>
+    @if(messages.Count == 50) { <a class="btn btn-outline" href="@Url.Action("Thread", new { id = Model.Id, before = messages[0].Id })">Tin nhắn cũ hơn</a> }
+    @if(!messages.Any()) { <p class="empty">Gửi lời chào và nội dung bạn muốn trao đổi để bắt đầu cuộc trò chuyện.</p> }
+    <div class="chat-thread" role="log" aria-label="Tin nhắn hội thoại" aria-live="polite" aria-relevant="additions">@foreach(var message in messages) { <article class="chat-message" data-message-id="@message.Id"><div class="chat-meta"><span class="heading-row">@Html.Partial("_Avatar", new AvatarView { Id = message.SenderId, Name = message.Sender.Name, Size = "small" })<strong>@message.Sender.Name</strong></span><time datetime="@message.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")">@NexusFreelance.Web.Services.DisplayTime.Vietnam(message.CreatedAtUtc)</time></div><p class="chat-body">@message.Body</p></article> }</div>
+    @if ((bool)ViewBag.CanSend)
+    {
+        using(Html.BeginForm("Send", "Messages", new { id = Model.Id }, FormMethod.Post, new { @class = "chat-compose" })) { @Html.AntiForgeryToken()<label for="Body">Tin nhắn</label><textarea id="Body" name="body" maxlength="2000" rows="3" aria-describedby="message-help" required></textarea><small id="message-help">Tối đa 2000 ký tự. Bạn có thể gửi tối đa 15 tin nhắn mỗi phút.</small><button class="btn btn-primary" type="submit">Gửi tin nhắn</button> }
+    }
+    else { <p class="muted" role="status">Hiện không thể gửi tin nhắn vì một tài khoản không còn khả dụng.</p> }
+</section>
+<p data-live-send-status class="form-help" role="status" aria-live="polite"></p>

@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');
+const {integer,validate}=require('../NexusFreelance.Web/Content/milestone-editor.js');
+const rows=[{Title:'Bản mẫu',Amount:400000,DueDay:5,AcceptanceCriteria:'Chạy đúng bộ kiểm thử đã chốt'},{Title:'Bàn giao',Amount:600000,DueDay:14,AcceptanceCriteria:'Có mã nguồn và hướng dẫn chạy'}];
+assert.equal(validate(rows,1000000,14),'');
+assert.notEqual(validate(rows,999999,14),'');
+assert.notEqual(validate(rows.map((r,i)=>({...r,DueDay:i?4:5})),1000000,14),'');
+assert.notEqual(validate(rows,1000000,10),'');
+assert.notEqual(validate(rows.map(r=>({...r,AcceptanceCriteria:''})),1000000,14),'');
+for(const bad of ['1,000','1.2','-1','Infinity','1e5','9007199254740993'])assert.ok(Number.isNaN(integer(bad)));
+assert.equal(integer('1000000'),1000000);
+console.log('PASS milestone editor totals, deadlines, criteria and strict whole-VND input');

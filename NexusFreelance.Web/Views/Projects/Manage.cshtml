@@ -1,0 +1,170 @@
+﻿@using System.Linq
+@using NexusFreelance.Web.Models
+@model NexusFreelance.Web.Models.Project
+@{
+    ViewBag.Title = "Quản lý " + Model.Title;
+    var proposals = (ViewBag.Proposals as System.Collections.Generic.List<Proposal>) ?? new System.Collections.Generic.List<Proposal>();
+    var assignments = (ViewBag.Assignments as System.Collections.Generic.List<RoleAssignment>) ?? new System.Collections.Generic.List<RoleAssignment>();
+    var workspace = ViewBag.Workspace as Workspace;
+    var reviews = (ViewBag.Reviews as System.Collections.Generic.List<Review>) ?? new System.Collections.Generic.List<Review>();
+    var publicApplicants = (System.Collections.Generic.List<int>)ViewBag.PublicApplicantIds;
+    var publicGroups = (System.Collections.Generic.List<int>)ViewBag.PublicGroupIds;
+    var groupBids = (ViewBag.GroupBids as System.Collections.Generic.List<GroupBid>) ?? new System.Collections.Generic.List<GroupBid>();
+    var groupBidProposals = (ViewBag.GroupBidProposals as System.Collections.Generic.List<Proposal>) ?? new System.Collections.Generic.List<Proposal>();
+}
+<div class="page-head"><span class="eyebrow">CLIENT DASHBOARD / PROJECT #@Model.Id</span><div class="heading-row"><h1>@Model.Title</h1><span class="pill">@NexusFreelance.Web.Services.ContractPresentation.Status(Model.Status)</span></div><p>Ngân sách @Model.Budget.ToString("N0") VND · Hình thức @NexusFreelance.Web.Services.WorkLabels.ProjectType(Model.ProjectType)</p></div>
+<div class="page-explainer"><strong>Bước tiếp theo</strong>@if(Model.Status=="Draft") { <span>@(Model.Requirements.Any()?"Kiểm tra yêu cầu, ngân sách và các vị trí; sau đó bấm Công bố dự án.":"Thêm ít nhất một vị trí cần tuyển ở bên dưới. Bản nháp chưa xuất hiện trong tìm kiếm.")</span><a href="#project-roles">Xem vị trí cần tuyển ↓</a> } else if(Model.Status=="Published" && Model.Requirements.Any() && Model.Requirements.All(r=>assignments.Count(a=>a.RoleRequirementId==r.Id)>=r.RequiredCount)) { <span>Các vị trí đã đủ người. Bạn có thể đóng tuyển dụng; tiếp tục theo dõi xác nhận, ký quỹ và nghiệm thu trong từng hợp đồng.</span> } else if(Model.Status=="Published") { <span>Xem chào giá và trao đổi với ứng viên. Chọn một chào giá sẽ tạo một hợp đồng riêng để các bên xác nhận.</span><a href="#project-applicants">Xem ứng viên ↓</a> } else if(Model.Status=="Completed") { <span>Dự án đã kết thúc. Bạn có thể đánh giá thành viên, xem hợp đồng và tra cứu lịch sử bàn giao, thanh toán.</span> } else { <span>Mở từng hợp đồng để theo dõi xác nhận, ký quỹ, công việc và bàn giao. Việc đóng tuyển dụng và kết thúc toàn dự án là các bước riêng.</span> }</div>
+<div class="toolbar"><a class="btn btn-outline" href="@Url.Action("Details", new { id = Model.Id })">Xem trang dự án ↗</a>
+    @if ((bool)ViewBag.CanEditProject && Model.Status != "Draft") { <a class="btn btn-primary" href="@Url.Action("Edit", new { id = Model.Id })">Cập nhật dự án</a> }
+    @if (Model.Status == "Draft")
+    {
+        <a class="btn btn-outline" href="@Url.Action("Edit", new { id = Model.Id })">Sửa bản nháp</a>
+        if (Model.Requirements.Any()) {
+            using (Html.BeginForm("Publish", "Projects", new { id = Model.Id }, FormMethod.Post, new { @class = "inline" }))
+            { @Html.AntiForgeryToken() <button class="btn btn-primary" type="submit">Công bố dự án →</button> }
+        }
+    }
+    @if (Model.Status == "Published")
+    {
+        using (Html.BeginForm("LockTeam", "Projects", new { id = Model.Id }, FormMethod.Post, new { @class = "inline" }))
+        { @Html.AntiForgeryToken() <button class="btn btn-dark" type="submit">Đã đủ vị trí · đóng tuyển dụng →</button> }
+        using (Html.BeginForm("ChangeStatus", "Projects", new { id = Model.Id }, FormMethod.Post, new { @class = "inline" }))
+        { @Html.AntiForgeryToken() <button class="btn btn-outline" name="operation" value="Pause" type="submit">Tạm dừng tuyển</button> }
+    }
+    @if (Model.Status == "Paused")
+    {
+        using (Html.BeginForm("ChangeStatus", "Projects", new { id = Model.Id }, FormMethod.Post, new { @class = "inline" }))
+        { @Html.AntiForgeryToken() <button class="btn btn-primary" name="operation" value="Resume" type="submit">Tiếp tục tuyển</button> }
+    }
+    @if (Model.Status == "Draft" || Model.Status == "Published" || Model.Status == "Paused")
+    {
+        using (Html.BeginForm("ChangeStatus", "Projects", new { id = Model.Id }, FormMethod.Post, new { @class = "inline", data_confirm = "Hủy dự án này? Không thể khôi phục trạng thái." }))
+        { @Html.AntiForgeryToken() <button class="btn btn-outline" name="operation" value="Cancel" type="submit">Hủy dự án</button> }
+    }
+    @if (workspace != null)
+    {
+        <a class="btn btn-primary" href="@Url.Action("Index", "Contracts", new { projectId = Model.Id })">Chọn hợp đồng để làm việc →</a>
+    }
+    @if (Model.Status == "InProgress")
+    {
+        using (Html.BeginForm("Complete", "Projects", new { id = Model.Id }, FormMethod.Post, new { @class = "inline" }))
+        { @Html.AntiForgeryToken() <button class="btn btn-outline" type="submit">Hoàn tất dự án khi các hợp đồng đã xong</button> }
+    }
+    @if (Model.Status == "Completed")
+    {
+        <a class="btn btn-outline" href="@Url.Action("Index", "ProjectMemory", new { projectId = Model.Id })">Project Memory (nội bộ) ↗</a>
+    }
+</div>
+<div class="panel section-small contract-callout"><a class="btn btn-outline" href="@Url.Action("Index", "Contracts", new { projectId = Model.Id })">Hợp đồng, xác nhận &amp; thanh toán →</a><p>Mỗi chào giá được chọn có hợp đồng riêng. Hai phía và các thành viên xác nhận điều khoản, Client bảo đảm mốc đầu rồi mở kênh làm việc. Bạn có thể tiếp tục tuyển các vị trí còn trống.</p></div>
+@if((bool)ViewBag.CanEditProject && (Model.Status == "Draft" || Model.Status == "Published" || Model.Status == "Paused")) {
+<section class="panel section-small"><h2>Hạn dự kiến và tiếp tục tuyển</h2><p>Hạn hiện tại: <strong>@(Model.DeadlineUtc.HasValue ? Model.DeadlineUtc.Value.ToString("dd/MM/yyyy") : "Chưa xác định")</strong>. Quá ngày này, hệ thống ngừng nhận đề xuất mới. Đổi hạn hiển thị không sửa mốc hoặc thời hạn trong các hợp đồng đã xác nhận.</p>
+@if(!NexusFreelance.Web.Services.RecruitmentPolicy.DateAllowsApplications(Model.DeadlineUtc, DateTime.UtcNow)) { <p class="alert danger" role="status">Dự án đã quá hạn dự kiến. Cập nhật hạn bên dưới để tiếp tục nhận đề xuất.</p> }
+@using(Html.BeginForm("UpdateDeadline", "Projects", new {id=Model.Id}, FormMethod.Post, new {@class="form-grid"})) { @Html.AntiForgeryToken()<div><label for="project-deadline">Hạn dự kiến mới</label><input id="project-deadline" name="deadline" type="date" min="@DateTime.UtcNow.ToString("yyyy-MM-dd")" value="@(Model.DeadlineUtc.HasValue ? Model.DeadlineUtc.Value.ToString("yyyy-MM-dd") : "")" required /></div><div class="form-actions"><button type="submit" class="btn btn-outline">Cập nhật hạn dự kiến</button></div> }
+</section> }
+<section class="panel section-small"><div class="heading-row"><h2 id="project-roles">1. Vị trí cần tuyển</h2><span class="eyebrow">STAFFING</span></div>
+@if (!Model.Requirements.Any()) { <p class="muted">Chưa khai báo vị trí. Hãy tạo vị trí trước khi công bố.</p> }
+@foreach (var r in Model.Requirements)
+{
+    var assigned = assignments.Where(a => a.RoleRequirementId == r.Id).ToList();
+    <div class="list-item"><div><h3>@r.Title</h3><p class="muted">Đã tuyển @assigned.Count / @r.RequiredCount</p><small>@string.Join(", ", assigned.Select(a => a.Freelancer.Name))</small></div><span class="pill">@(assigned.Count == r.RequiredCount ? "Đủ người" : "Còn trống")</span></div>
+}
+@if (Model.Status == "Draft")
+{
+    <form method="post" action="@Url.Action("AddRequirement")" class="form-grid inline-add">
+        @Html.AntiForgeryToken()<input type="hidden" name="ProjectId" value="@Model.Id" />
+        <div><label for="Title">Tên vai trò</label><input id="Title" name="Title" maxlength="100" required placeholder="Backend Developer" /></div>
+        <div><label for="RequiredCount">Số lượng cần tuyển</label><input id="RequiredCount" name="RequiredCount" type="number" min="1" max="50" value="1" required /></div>
+        <div><label aria-hidden="true">&nbsp;</label><button class="btn btn-dark" type="submit">+ Thêm vị trí</button></div>
+    </form>
+}
+</section>
+@if(Model.Status == "Draft" || Model.Status == "Published" || Model.Status == "Paused") { @Html.Partial("_Recommendations", (NexusFreelance.Web.ViewModels.SkillMatchPage)ViewBag.Recommendations) }
+@if(Model.Status != "Draft" && Model.ProjectType != "TEAM") {
+<section class="panel section-small" id="individual-bids">
+    <div class="heading-row"><h2 id="project-applicants">2. Chào giá cá nhân</h2><span class="pill">@proposals.Count chào giá</span></div>
+    <p class="muted">Xem thông tin chào giá, mở hồ sơ công khai để tìm hiểu năng lực và trao đổi trước khi chọn.</p>
+    @if (!proposals.Any()) { <div class="empty">Chưa có chào giá cá nhân.</div> }
+    <div class="received-bids">
+    @foreach (var p in proposals)
+    {
+        <article class="bid-card" data-bid-id="@p.Id" aria-labelledby="bid-person-@p.Id">
+            <div class="bid-header"><div class="bid-identity">
+                @Html.Partial("_Avatar", new NexusFreelance.Web.ViewModels.AvatarView { Id=p.ApplicantId, Name=p.Applicant.Name })
+                <div><h3 id="bid-person-@p.Id">@if(publicApplicants.Contains(p.ApplicantId)) { <a href="@Url.Action("Freelancer", "Talent", new { id=p.ApplicantId })">@p.Applicant.Name</a> } else { @p.Applicant.Name }</h3><p class="muted">@p.Requirement.Title</p></div>
+            </div><span class="pill">@NexusFreelance.Web.Services.WorkLabels.Proposal(p.Status)</span></div>
+            <dl class="bid-facts">
+                <div><dt>Giá chào</dt><dd class="bid-price">@p.QuotedPrice.ToString("N0") <span>VND</span></dd></div>
+                <div><dt>Thời gian thực hiện</dt><dd>@p.DeliveryDays ngày</dd></div>
+                <div><dt>Gửi chào giá</dt><dd><time datetime="@(p.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss"))Z">@NexusFreelance.Web.Services.DisplayTime.Vietnam(p.CreatedAtUtc)</time></dd></div>
+            </dl>
+            <div class="bid-actions">
+                @if(publicApplicants.Contains(p.ApplicantId)) { <a class="btn btn-primary" href="@Url.Action("Freelancer", "Talent", new { id=p.ApplicantId })">Xem hồ sơ công khai ↗</a> } else { <span class="form-help">Hồ sơ hiện không công khai.</span> }
+                <a class="btn btn-outline" href="@Url.Action("Thread", "Negotiation", new { proposalId=p.Id })">Chi tiết chào giá &amp; trao đổi</a>
+            </div>
+            @if ((p.Status == "Pending" || p.Status == "Shortlisted") && Model.Status == "Published")
+            {
+                <div class="bid-decisions">
+                @if (p.Status == "Pending") { using (Html.BeginForm("Shortlist", "Projects", new { id=Model.Id, proposalId=p.Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Chọn sơ bộ</button> } }
+                @using (Html.BeginForm("Accept", "Projects", new { id=Model.Id, proposalId=p.Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button type="submit" class="btn btn-dark">Chọn ứng viên &amp; tạo hợp đồng →</button> }
+                @using (Html.BeginForm("Reject", "Projects", new { id=Model.Id, proposalId=p.Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Từ chối đề xuất</button> }
+                </div>
+            }
+        </article>
+    }
+    </div>
+</section>
+}
+@if(Model.Status != "Draft" && Model.ProjectType != "SOLO") {
+<section class="panel section-small" id="group-bids">
+    <div class="heading-row"><h2>3. Chào giá theo nhóm</h2><span class="pill">@groupBids.Count chào giá</span></div>
+    <p class="muted">Mở hồ sơ nhóm để xem giới thiệu, đội ngũ và năng lực. Chi tiết đội hình và mốc bàn giao nằm trong chào giá.</p>
+    @if (!groupBids.Any()) { <div class="empty">Chưa có chào giá theo nhóm.</div> }
+    <div class="received-bids">
+    @foreach (var bid in groupBids)
+    {
+        var candidates = groupBidProposals.Where(p => p.GroupBidId == bid.Id).OrderBy(p => p.Id).ToList();
+        <article class="bid-card" data-group-bid-id="@bid.Id" aria-labelledby="bid-group-@bid.Id">
+            <div class="bid-header"><div class="bid-identity">
+                <span class="group-monogram" aria-hidden="true">@(string.IsNullOrWhiteSpace(bid.Group.Name) ? "N" : bid.Group.Name.Trim().Substring(0,1).ToUpperInvariant())</span>
+                <div><h3 id="bid-group-@bid.Id">@if(publicGroups.Contains(bid.FreelancerGroupId)) { <a href="@Url.Action("Group", "Talent", new { id=bid.FreelancerGroupId })">@bid.Group.Name</a> } else { @bid.Group.Name }</h3><p class="muted">Trưởng nhóm: @bid.Leader.Name · @candidates.Select(p=>p.ApplicantId).Distinct().Count() thành viên trong chào giá</p></div>
+            </div><span class="pill">@NexusFreelance.Web.Services.WorkLabels.Proposal(bid.Status)</span></div>
+            <dl class="bid-facts">
+                <div><dt>Tổng giá chào</dt><dd class="bid-price">@candidates.Sum(p=>p.QuotedPrice).ToString("N0") <span>VND</span></dd></div>
+                <div><dt>Thời gian thực hiện</dt><dd>@bid.DeliveryDays ngày</dd></div>
+                <div><dt>Gửi chào giá</dt><dd><time datetime="@(bid.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss"))Z">@NexusFreelance.Web.Services.DisplayTime.Vietnam(bid.CreatedAtUtc)</time></dd></div>
+            </dl>
+            <div class="bid-actions">
+                @if(publicGroups.Contains(bid.FreelancerGroupId)) { <a class="btn btn-primary" href="@Url.Action("Group", "Talent", new { id=bid.FreelancerGroupId })">Xem hồ sơ nhóm ↗</a> } else { <span class="form-help">Hồ sơ nhóm hiện không công khai.</span> }
+                @if(candidates.Any()) { <a class="btn btn-outline" href="@Url.Action("Thread", "Negotiation", new { proposalId=candidates[0].Id })">Chi tiết chào giá &amp; trao đổi</a> }
+            </div>
+            @if ((bid.Status == "Pending" || bid.Status == "Shortlisted") && Model.Status == "Published" && candidates.Any())
+            {
+                <div class="bid-decisions">
+                @if(bid.Status == "Pending") { using (Html.BeginForm("Shortlist", "Projects", new { id=Model.Id, proposalId=candidates[0].Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Chọn sơ bộ nhóm</button> } }
+                @using(Html.BeginForm("Decide", "GroupBids", new { id=bid.Id, accept=true }, FormMethod.Post)) { @Html.AntiForgeryToken()<button type="submit" class="btn btn-dark">Chọn đội hình &amp; tạo hợp đồng</button> }
+                @using(Html.BeginForm("Decide", "GroupBids", new { id=bid.Id, accept=false }, FormMethod.Post)) { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Từ chối nhóm</button> }
+                </div>
+            }
+        </article>
+    }
+    </div>
+</section>
+}
+@if (Model.Status == "Completed")
+{
+    <section class="panel section-small"><h2>03 · Đánh giá thành viên</h2>
+    @foreach (var a in assignments)
+    {
+        if (reviews.Any(r => r.FreelancerId == a.FreelancerId)) { <p>✓ Đã đánh giá @a.Freelancer.Name</p> }
+        else
+        {
+            <form method="post" action="@Url.Action("Review")" class="review-form">
+                @Html.AntiForgeryToken()<input type="hidden" name="ProjectId" value="@Model.Id"/><input type="hidden" name="FreelancerId" value="@a.FreelancerId" />
+                <strong>@a.Freelancer.Name</strong><label>Điểm 1–5</label><input type="number" name="Rating" min="1" max="5" required />
+                <label>Nhận xét</label><textarea name="Comment" maxlength="1500" rows="2"></textarea>
+                <button class="btn btn-outline" type="submit">Lưu đánh giá</button>
+            </form>
+        }
+    }
+    </section>
+}

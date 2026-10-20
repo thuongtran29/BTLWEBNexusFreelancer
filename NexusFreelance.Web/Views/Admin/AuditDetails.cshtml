@@ -1,0 +1,12 @@
+@model NexusFreelance.Web.ViewModels.AdminAuditRow
+@using NexusFreelance.Web.Services
+@{ ViewBag.Title = "Chi tiết kiểm duyệt #" + Model.Id; }
+<section class="page-header"><h1>Thao tác kiểm duyệt #@Model.Id</h1><p>@Model.Action</p></section>
+<nav class="action-group" aria-label="Điều hướng nhật ký"><a class="btn btn-outline" href="@Url.Action("Audit")">Tất cả nhật ký</a><a class="btn btn-outline" href="@Url.Action("Audit", new { userId = Model.TargetUserId })">Nhật ký liên quan đối tượng</a></nav>
+<section class="panel"><h2>Thông tin đã ghi nhận</h2><dl>
+    <dt>Thời điểm (UTC+7)</dt><dd>@DisplayTime.Vietnam(Model.CreatedAtUtc)</dd>
+    <dt>Thời gian nguồn chính xác (UTC)</dt><dd><time datetime="@Model.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")">@Model.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm:ss.fff") UTC</time></dd>
+    <dt>Người thực hiện</dt><dd><a href="@Url.Action("UserProfile", new { id = Model.ActorId })">@Model.Actor · #@Model.ActorId</a></dd>
+    <dt>Tài khoản đối tượng</dt><dd><a href="@Url.Action("UserProfile", new { id = Model.TargetUserId })">@Model.Target · #@Model.TargetUserId</a></dd>
+    <dt>Mã thao tác</dt><dd>@Model.Action</dd><dt>Lý do / chi tiết được lưu</dt><dd class="description">@Model.Reason</dd>
+</dl><p class="muted">Với thay đổi danh mục, tài khoản đối tượng có thể là chính quản trị viên; nhật ký cũ không chứa bản chụp trước và sau.</p></section>

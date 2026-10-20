@@ -1,0 +1,27 @@
+@model NexusFreelance.Web.Models.Proposal
+@using System.Linq
+@{ ViewBag.Title = "Trao đổi trước hợp đồng"; var messages = (List<NexusFreelance.Web.Models.NegotiationMessage>)ViewBag.Messages; }
+<div class="page-head"><span class="eyebrow">TRƯỚC HỢP ĐỒNG</span><h1>@Model.Project.Title</h1><p>Khách hàng và @ViewBag.ParticipantName · @Model.Status</p><a href="@Url.Action("Details", "Projects", new { id = Model.ProjectId })">Xem công việc →</a></div>
+@{ var bidMembers = (List<NexusFreelance.Web.Models.Proposal>)ViewBag.BidMembers; }
+<section class="panel section-small" id="offer-details"><h2>Chi tiết chào giá</h2>
+@if(Model.GroupBidId.HasValue) {
+    <p>Nhóm: <strong>@Model.GroupBid.Group.Name</strong> · @Model.GroupBid.DeliveryDays ngày</p>
+    <p class="description">@Model.GroupBid.Pitch</p>
+    <p>Tổng giá chào: <strong>@bidMembers.Sum(p=>p.QuotedPrice).ToString("N0") VND</strong></p>
+    <p class="form-help">Gửi lúc @NexusFreelance.Web.Services.DisplayTime.Vietnam(Model.GroupBid.CreatedAtUtc). Đây là đội hình trong chào giá; hồ sơ nhóm công khai hiển thị đội ngũ hiện tại.</p>
+    <div class="negotiation-roster">@foreach(var member in bidMembers) { <p><strong>@member.Applicant.Name</strong> · @member.Requirement.Title · @member.QuotedPrice.ToString("N0") VND</p> }</div>
+    @Html.Partial("_PlanSummary", Model.GroupBid.MilestonePlan ?? "")
+} else {
+    <p>Ứng viên: <strong>@Model.Applicant.Name</strong> · @Model.Requirement.Title · @Model.DeliveryDays ngày</p>
+    <p>Giá chào: <strong>@Model.QuotedPrice.ToString("N0") VND</strong></p>
+    <p class="form-help">Gửi lúc @NexusFreelance.Web.Services.DisplayTime.Vietnam(Model.CreatedAtUtc)</p>
+    <p class="description">@Model.Pitch</p>@Html.Partial("_ProposalPlan", Model)
+}
+</section>
+<section class="panel section-small"><p>Trao đổi rõ phạm vi, sản phẩm bàn giao, thời gian và mốc thanh toán trước khi chốt. Tin nhắn chỉ hiển thị cho khách hàng và người chào giá / trưởng nhóm.</p>
+@if (messages.Count == 50) { <a href="@Url.Action("Thread", new { proposalId = Model.Id, beforeId = messages[0].Id })">Xem tin nhắn cũ hơn</a> }
+@if (!messages.Any()) { <p class="empty">Chưa có tin nhắn.</p> }
+@foreach (var message in messages) { <article class="chat-message"><strong>@message.Sender.Name</strong><time>@message.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time><p class="chat-body">@message.Body</p></article> }
+@if (Model.Project.Status == "Published" && (Model.Status == "Pending" || Model.Status == "Shortlisted")) { using (Html.BeginForm("Send", "Negotiation", FormMethod.Post)) { @Html.AntiForgeryToken()<input type="hidden" name="proposalId" value="@Model.Id" /><label for="body">Tin nhắn mới</label><textarea id="body" name="body" rows="4" maxlength="2000" required></textarea><button class="btn btn-primary" type="submit">Gửi tin nhắn</button> } }
+else { <p class="muted">Trao đổi trước hợp đồng đã đóng. Lịch sử được giữ; tiếp tục công việc trong Workspace.</p> }
+</section>

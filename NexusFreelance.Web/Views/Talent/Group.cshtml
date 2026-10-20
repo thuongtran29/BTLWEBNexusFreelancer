@@ -1,0 +1,61 @@
+@model NexusFreelance.Web.ViewModels.PublicGroupPage
+@using System.Linq
+@{
+    ViewBag.Title = Model.Group.Name;
+    var skills = (System.Collections.Generic.List<NexusFreelance.Web.ViewModels.VerifiedSkillRow>)ViewBag.GroupCoreSkills;
+    var roleLabels = (System.Collections.Generic.Dictionary<int,string>)ViewBag.SelectedRoles;
+}
+<header class="page-head public-group-head">
+    <span class="eyebrow">HỒ SƠ NHÓM CÔNG KHAI</span>
+    <div class="bid-identity"><span class="group-monogram group-monogram-large" aria-hidden="true">@(System.Globalization.StringInfo.GetNextTextElement(Model.Group.Name.Trim()).ToUpperInvariant())</span><div><h1>@Model.Group.Name</h1><p class="muted">@(string.IsNullOrWhiteSpace(Model.Industry) ? "Nhóm freelancer" : Model.Industry) · @Model.Group.MemberCount thành viên công khai</p></div></div>
+    <div class="bid-actions">
+        @if(Model.HasLeaderProfile && (string)ViewBag.CurrentRole == "Client") {
+            using(Html.BeginForm("Contact", "Messages", new { freelancerId=Model.LeaderId }, FormMethod.Post)) { @Html.AntiForgeryToken()<button class="btn btn-primary" type="submit">Liên hệ trưởng nhóm</button> }
+        } else if(Model.HasLeaderProfile && !User.Identity.IsAuthenticated) {
+            <a class="btn btn-primary" href="@Url.Action("Login", "Account", new { returnUrl=Url.Action("Group", "Talent", new { id=Model.Group.Id }) })">Đăng nhập để liên hệ nhóm</a>
+        }
+        <a class="btn btn-outline" href="#group-members">Xem đội ngũ</a><a class="btn btn-outline" href="@Url.Action("Index", new { kind="group" })">Khám phá nhóm</a>
+    </div>
+</header>
+<section class="panel section-small" aria-labelledby="group-about">
+    <h2 id="group-about">Giới thiệu nhóm</h2><p class="description">@Model.Group.Description</p>
+    <dl class="group-overview">
+        <div><dt>Trưởng nhóm</dt><dd>@if(Model.HasLeaderProfile) { <a href="@Url.Action("Freelancer", new { id=Model.LeaderId })">@Model.Group.LeaderName ↗</a> } else { @Model.Group.LeaderName }</dd></div>
+        <div><dt>Hình thức làm việc</dt><dd>@(Model.WorkStyle=="Remote" ? "Từ xa" : Model.WorkStyle=="Hybrid" ? "Kết hợp" : Model.WorkStyle=="Onsite" ? "Trực tiếp" : "Trao đổi với trưởng nhóm")</dd></div>
+        <div><dt>Ngân sách tham khảo</dt><dd>@(Model.MinimumBudget.HasValue && Model.MinimumBudget.Value>0 ? "Từ " + Model.MinimumBudget.Value.ToString("N0") + " VND / dự án" : "Theo phạm vi dự án")</dd></div>
+        <div><dt>Tham gia nền tảng</dt><dd><time datetime="@(Model.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss"))Z">@Model.CreatedAtUtc.ToString("dd/MM/yyyy")</time></dd></div>
+    </dl>
+    @if(!string.IsNullOrWhiteSpace(Model.Specialties)) { <h3>Dịch vụ và thế mạnh</h3><p class="description">@Model.Specialties</p> }
+    @if(!string.IsNullOrWhiteSpace(Model.Collaboration)) { <h3>Cách phối hợp</h3><p class="description">@Model.Collaboration</p> }
+</section>
+<section class="panel section-small" aria-labelledby="group-skills">
+    <div class="heading-row"><h2 id="group-skills">Năng lực đã xác minh</h2><span class="pill">@skills.Count kỹ năng</span></div>
+    <p class="muted">Tổng hợp bằng chứng còn hiệu lực của thành viên công khai đang hoạt động. Mỗi kỹ năng lấy mức cao nhất của một thành viên, không cộng dồn mức độ.</p>
+    @if(!skills.Any()) { <div class="empty">Nhóm chưa có kỹ năng được xác minh để hiển thị.</div> }
+    else { <div class="skill-chips">@foreach(var skill in skills) { <span class="pill">@skill.Title · @skill.Level/5 · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(skill.Level)</span> }</div> }
+</section>
+<section class="panel section-small" id="group-members" aria-labelledby="group-team">
+    <div class="heading-row"><h2 id="group-team">Đội ngũ chuyên môn</h2><span class="pill">@Model.Group.MemberCount thành viên</span></div>
+    <p class="muted">Mở từng hồ sơ để xem giới thiệu, portfolio và nguồn xác minh năng lực.</p>
+    @if(!Model.Members.Any()) { <div class="empty">Chưa có thành viên công khai để giới thiệu.</div> }
+    <div class="public-member-grid">
+    @foreach(var member in Model.Members) {
+        <article class="public-member-card">
+            <div class="bid-identity">@Html.Partial("_Avatar", new NexusFreelance.Web.ViewModels.AvatarView { Id=member.Id, Name=member.Name })<div><h3><a href="@Url.Action("Freelancer", new { id=member.Id })">@member.Name</a></h3><p class="muted">@(member.Id==Model.LeaderId ? "Trưởng nhóm" : "Thành viên")</p></div></div>
+            <p>@(string.IsNullOrWhiteSpace(member.CoreRole) ? "Freelancer" : member.CoreRole)</p>
+            @if(roleLabels.ContainsKey(member.Id) && !string.IsNullOrWhiteSpace(roleLabels[member.Id])) { <p class="form-help">@roleLabels[member.Id]</p> }
+            <a class="btn btn-outline" href="@Url.Action("Freelancer", new { id=member.Id })">Xem hồ sơ công khai ↗</a>
+        </article>
+    }
+    </div>
+</section>
+<section class="panel section-small" aria-labelledby="group-portfolio">
+    <div class="heading-row"><h2 id="group-portfolio">Portfolio của thành viên</h2><span class="pill">@Model.Portfolio.Count sản phẩm gần đây</span></div>
+    <p class="muted">Các sản phẩm do thành viên tự giới thiệu, không mặc định là dự án do cả nhóm thực hiện.</p>
+    @if(!Model.Portfolio.Any()) { <div class="empty">Chưa có portfolio công khai của thành viên.</div> }
+    <div class="public-member-grid">
+    @foreach(var item in Model.Portfolio) {
+        <article class="public-member-card"><h3>@item.Title</h3><p class="description">@item.Summary</p><p class="muted">@item.Role</p><p>Người thực hiện: <a href="@Url.Action("Freelancer", new { id=item.FreelancerId })">@item.FreelancerName</a></p><a class="btn btn-outline" href="@item.Url" target="_blank" rel="noopener noreferrer nofollow">Xem sản phẩm ↗</a></article>
+    }
+    </div>
+</section>

@@ -1,0 +1,89 @@
+@using NexusFreelance.Web.Models
+@using NexusFreelance.Web.Services
+@{ ViewBag.Title = "Ví & dòng tiền"; var wallet = ViewBag.Wallet as WalletAccount; var requests = (List<MoneyRequest>)ViewBag.Requests; var entries = (List<WalletEntry>)ViewBag.Entries; var projects = (List<Project>)ViewBag.EscrowProjects; var client = (string)ViewBag.CurrentRole == "Client"; var bankTopup = ViewBag.BankTopup as MoneyRequest; var vnPayReady = (bool)ViewBag.VnPayReady; }
+@{ var pendingWithdrawal = (decimal)ViewBag.PendingWithdrawalAmount; var availableBalance = Math.Max(0m, (wallet == null ? 0m : wallet.Balance) - pendingWithdrawal); }
+<style>
+    .wallet-topup-form { margin-top:1rem; }
+    .wallet-qr-panel { scroll-margin-top:6rem; }
+    .wallet-transfer-grid { display:grid; grid-template-columns:minmax(0,18rem) minmax(0,1fr); gap:1.5rem; align-items:start; margin-top:1.25rem; }
+    .wallet-transfer-grid figure { margin:0; }
+    .wallet-transfer-grid [data-wallet-qr] { display:block; width:100%; max-width:18rem; aspect-ratio:1; background:white; }
+    .wallet-transfer-grid [data-wallet-qr] svg { display:block; width:100%; height:auto; }
+    .wallet-transfer-grid [hidden] { display:none; }
+    .wallet-transfer-grid figcaption { margin-top:.75rem; font-size:.875rem; }
+    .wallet-transfer-details { min-width:0; }
+    .wallet-transfer-details dl { display:grid; gap:.5rem; margin:0 0 1rem; }
+    .wallet-transfer-details dt { color:var(--muted,#536579); }
+    .wallet-transfer-details dd { margin:0 0 .5rem; font-weight:600; overflow-wrap:anywhere; }
+    .wallet-transfer-details code { white-space:normal; overflow-wrap:anywhere; }
+    @@media(max-width:600px) { .wallet-transfer-grid { grid-template-columns:minmax(0,1fr); } }
+</style>
+<div class="page-head"><span class="eyebrow">TÀI CHÍNH · VND</span><h1>Ví &amp; dòng tiền</h1><p>Theo dõi số dư, tiền ký quỹ và lịch sử giao dịch của hồ sơ @(client ? "khách hàng" : "freelancer").</p></div>
+<div class="help-grid"><article class="help-card"><h3>Số dư khả dụng</h3><p>Tiền đã ghi nhận trong ví, chưa giữ cho mốc hợp đồng. Yêu cầu đối soát đang chờ chưa làm tăng số dư.</p></article><article class="help-card"><h3>Ký quỹ cho hợp đồng</h3><p>Mở hợp đồng đã đủ xác nhận, chọn mốc cần bảo đảm. Dùng số dư ví hoặc VNPay khi cổng được cấu hình.</p><a href="@Url.Action("Index","Contracts",new{stage="fund"})">Xem hợp đồng chờ ký quỹ →</a></article><article class="help-card"><h3>Nhận và rút thu nhập</h3><p>Tiền ký quỹ được quyết toán sau khi khách hàng nghiệm thu. Freelancer gửi yêu cầu rút từ số dư khả dụng.</p></article></div>
+<section class="metrics finance-metrics" aria-label="Số dư ví"><article class="metric"><span>Số dư khả dụng</span><strong>@availableBalance.ToString("N0") đ</strong>@if(pendingWithdrawal > 0) { <small>Đã trừ @pendingWithdrawal.ToString("N0") VND chờ rút. Chỉ ghi trừ vào sổ ví khi quản trị xác nhận đã chi.</small> }</article><article class="metric"><span>Đang giữ ký quỹ</span><strong>@((wallet == null ? 0m : wallet.Held).ToString("N0")) đ</strong></article><article class="metric"><span>Yêu cầu chờ xử lý</span><strong>@ViewBag.PendingRequests</strong></article></section>
+@if((decimal)ViewBag.PspRefundReserved>0) { <p role="status" class="alert">@(((decimal)ViewBag.PspRefundReserved).ToString("N0")) VND đang chờ hoàn qua VNPay, đã được trừ khỏi số dư khả dụng. Xem kết quả trong hợp đồng tương ứng.</p> }
+@if(client) {
+<section class="panel section-small"><span class="eyebrow">NẠP TIỀN VÀO VÍ</span><h2>Nhập số tiền → quét mã QR</h2>
+<p>@(vnPayReady ? "Tạo mã QR tại cổng VNPay. Ví chỉ được ghi có sau khi hệ thống xác minh kết quả từ VNPay." : "Tạo mã QR chuyển khoản ngân hàng MB. Yêu cầu được lưu để quản trị đối chiếu tiền thực nhận; tạo hoặc quét mã chưa làm tăng số dư ví.")</p>
+@if(vnPayReady && VnPaySettings.Mode == "sandbox") { <p class="alert info" role="status">VNPay đang ở môi trường thử nghiệm. Đây không phải giao dịch tiền thật.</p> }
+@using(Html.BeginForm("Topup", "Wallet", FormMethod.Post, new { @class="form-grid wallet-topup-form" })) {
+    @Html.AntiForgeryToken()
+    <div><label for="topup-amount">Số tiền nạp (VND)</label><input id="topup-amount" type="number" name="amount" min="10000" max="9999999999" step="1" required placeholder="500000" aria-describedby="topup-help" /></div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Tạo mã QR</button></div>
+}
+<p id="topup-help" class="form-help">Từ 10.000 đến 9.999.999.999 VND, không có phần lẻ. @(vnPayReady ? "Mã VNPay có hiệu lực 15 phút. Nếu đã thanh toán, kiểm tra kết quả trong lịch sử trước khi tạo lệnh mới." : "Gửi lại cùng số tiền sẽ mở lại yêu cầu đang chờ. Mỗi mã chỉ dùng cho một lần chuyển khoản; nếu đã chuyển, chờ đối soát và không chuyển thêm.")</p></section>
+if(bankTopup != null) {
+<section id="topup-qr" class="panel section-small wallet-qr-panel" aria-labelledby="bank-topup-title">
+    <h2 id="bank-topup-title">Lệnh nạp #@bankTopup.Id · @bankTopup.Amount.ToString("N0") VND</h2>
+    <p role="status"><strong>@(bankTopup.Status == "Approved" ? "Đã đối soát và ghi có vào ví" : bankTopup.Status == "Rejected" ? "Đã từ chối" : "Chờ chuyển khoản / quản trị đối soát")</strong></p>
+    @if(bankTopup.Status == "Pending") {
+        <p>Quét mã bằng ứng dụng ngân hàng và kiểm tra người thụ hưởng trước khi xác nhận. Giữ nguyên số tiền và nội dung để quản trị tìm đúng giao dịch.</p>
+        <div class="wallet-transfer-grid">
+            <figure><div data-wallet-qr data-wallet-payload="@WalletBankTransferService.QrPayload(bankTopup)" aria-label="Mã QR chuyển khoản MB cho lệnh nạp #@bankTopup.Id"></div><figcaption>Mã QR được tạo trực tiếp trên thiết bị. Kiểm tra ngân hàng, người nhận, số tiền và nội dung trước khi chuyển.</figcaption><p data-wallet-qr-error role="status">Nếu mã không hiện, dùng thông tin chuyển khoản bên cạnh hoặc tải lại trang.</p></figure>
+            <div class="wallet-transfer-details"><dl><dt>Ngân hàng nhận</dt><dd>@WalletBankTransferService.BankName</dd><dt>Số tài khoản</dt><dd>@WalletBankTransferService.AccountNumber</dd><dt>Số tiền chính xác</dt><dd>@bankTopup.Amount.ToString("N0") VND</dd><dt>Nội dung chuyển khoản</dt><dd><code>@bankTopup.Reference</code></dd></dl>
+            <p class="form-help">Đối chiếu tên người thụ hưởng với quản trị trước khi chuyển. Sau khi ngân hàng báo thành công, lưu chứng từ và chờ quản trị xác nhận; số dư chưa tăng ngay.</p>
+            <a class="btn btn-outline" href="@Url.Action("Index", new { transferId = bankTopup.Id })#topup-qr">Làm mới trạng thái</a></div>
+        </div>
+    } else { <p>Nội dung chuyển khoản: <code>@bankTopup.Reference</code></p><p>@bankTopup.Resolution</p><p>Yêu cầu đã được xử lý. Không chuyển thêm tiền theo mã này.</p> }
+</section>
+}
+var topups=(List<WalletTopup>)ViewBag.Topups;
+if(topups.Any()) {
+<section class="panel section-small"><h2>Lệnh nạp qua VNPay</h2>
+@foreach(var topup in topups) { <div class="list-item"><div><strong>@topup.Amount.ToString("N0") VND</strong><p>@(topup.Status=="Paid" ? "Đã nạp vào ví" : topup.Status=="Failed" ? "Thanh toán chưa thành công" : topup.ExpiresAtUtc<=DateTime.UtcNow ? "Lệnh hết hạn · cần đối soát nếu đã trả tiền" : "Chờ thanh toán")</p><small>@topup.TxnRef · @topup.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") UTC · @(topup.Environment=="sandbox" ? "Môi trường thử nghiệm" : "Thanh toán thực tế")</small></div><div class="toolbar">
+@if(topup.Status=="Pending" && topup.ExpiresAtUtc>DateTime.UtcNow) { using(Html.BeginForm("ContinueTopup", "Wallet", new { id=topup.Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Mở lại QR</button> } }
+@if(topup.Status!="Paid") { using(Html.BeginForm("ReconcileTopup", "Wallet", new { id=topup.Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Kiểm tra kết quả</button> } }
+</div></div> }</section>
+}
+}
+@if(!client) {
+<section class="panel section-small"><h2>Yêu cầu rút tiền</h2>
+<p class="muted">Nhập ngân hàng, số tài khoản và chủ tài khoản khớp thông tin của bạn. Yêu cầu đang chờ sẽ giữ hạn mức rút; tiền chỉ trừ khi quản trị xác nhận đã chi.</p>
+@using (Html.BeginForm("RequestMoney", "Wallet", FormMethod.Post, new { @class = "form-grid finance-form", data_confirm = "Gửi yêu cầu rút tiền với thông tin đã nhập?" })) {
+    @Html.AntiForgeryToken()<input type="hidden" name="kind" value="Withdrawal" />
+    <div><label for="amount">Số tiền (VND)</label><input id="amount" name="amount" type="number" min="1" max="999999999999" step="1" placeholder="Ví dụ: 500000" required /></div>
+    <div><label for="reference">Mã yêu cầu rút</label><input id="reference" name="reference" maxlength="100" value="@Guid.NewGuid().ToString("N")" required /></div>
+    <div class="full-width"><label for="details">Ngân hàng · Số tài khoản · Chủ tài khoản</label><textarea id="details" name="details" rows="3" maxlength="300" required></textarea></div>
+    <button class="btn btn-primary" type="submit">Gửi yêu cầu rút tiền</button>
+}</section>
+}
+<section class="panel section-small"><h2>Ký quỹ theo dự án</h2>
+@if (!projects.Any()) { <p class="empty">Chưa có mốc thanh toán. Mốc xuất hiện khi đề xuất được chọn và hợp đồng được tạo.</p> }
+@foreach (var p in projects) { <div class="list-item"><div><strong>@p.Title</strong><p class="muted">@ContractPresentation.Status(p.Status) · Ngân sách @p.Budget.ToString("N0") đ</p></div><a class="btn btn-outline" href="@Url.Action("Project", new { id = p.Id })">Xem ký quỹ →</a></div> }
+</section>
+<section class="panel table-panel section-small"><div class="table-heading"><h2>Lịch sử yêu cầu</h2><p class="muted">50 yêu cầu nạp / rút gần nhất.</p></div>
+@if (!requests.Any()) { <p class="empty">Chưa có yêu cầu nạp / rút.</p> }
+else { <p class="table-hint">↔ Kéo ngang trong bảng để xem đủ các cột.</p><div class="table-scroll" tabindex="0" role="region" aria-label="Lịch sử yêu cầu, có thể cuộn ngang"><table class="data-table"><thead><tr><th scope="col">Yêu cầu</th><th scope="col" class="number">Số tiền (VND)</th><th scope="col">Trạng thái</th><th scope="col">Kết quả đối soát</th></tr></thead><tbody>
+@foreach (var r in requests) { <tr><td><strong>#@r.Id · @(r.Kind == "Deposit" ? "Nạp tiền" : "Rút tiền")</strong><small>@r.Reference</small><small>@r.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>@if(client && WalletBankTransferService.IsBankTopup(r)) { <a href="@Url.Action("Index", new { transferId = r.Id })#topup-qr">@(r.Status == "Pending" ? "Mở lại QR / xem trạng thái" : "Xem kết quả")</a> }</td><td class="number">@r.Amount.ToString("N0")</td><td><span class="status-badge @(r.Status == "Rejected" ? "is-danger" : r.Status == "Pending" ? "is-neutral" : "")">@(r.Status == "Approved" ? "Đã đối soát" : r.Status == "Rejected" ? "Đã từ chối" : r.Kind == "Deposit" ? "Chờ chuyển khoản / đối soát" : "Chờ xử lý")</span></td><td class="cell-reason">@(String.IsNullOrWhiteSpace(r.Resolution) ? "Chưa có kết quả đối soát" : r.Resolution)</td></tr> }
+</tbody></table></div> }</section>
+
+@section scripts {
+<script src="@Url.Content("~/Content/vendor/wallet-qrcode-1.4.4.js")"></script>
+<script src="@Url.Content("~/Content/wallet-qr.js")?v=20261019.3"></script>
+}
+<section class="panel table-panel section-small"><div class="table-heading"><h2>Sổ giao dịch</h2><p class="muted">100 bút toán gần nhất. Dấu + tăng số dư; dấu − giảm số dư. Tiền giữ ký quỹ được theo dõi riêng.</p></div>
+@if (!entries.Any()) { <p class="empty">Ví chưa phát sinh giao dịch.</p> }
+else { <p class="table-hint">↔ Kéo ngang trong bảng để xem đủ các cột.</p><div class="table-scroll" tabindex="0" role="region" aria-label="Sổ giao dịch, có thể cuộn ngang"><table class="data-table"><thead><tr><th scope="col">Giao dịch</th><th scope="col" class="number">Giá trị (VND)</th><th scope="col" class="number">Thay đổi số dư</th><th scope="col" class="number">Thay đổi tiền giữ</th></tr></thead><tbody>
+@foreach (var e in entries) { <tr><td><strong>@ContractPresentation.LedgerKind(e.Kind)</strong><small>@e.Reference</small><small>@e.CreatedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small></td><td class="number">@e.Amount.ToString("N0")</td><td class="number">@e.BalanceDelta.ToString("+#,##0;-#,##0;0")</td><td class="number">@e.HeldDelta.ToString("+#,##0;-#,##0;0")</td></tr> }
+</tbody></table></div> }</section>
+

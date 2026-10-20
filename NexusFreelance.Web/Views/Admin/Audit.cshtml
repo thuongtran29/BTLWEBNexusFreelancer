@@ -1,0 +1,32 @@
+@using NexusFreelance.Web.Services
+@model NexusFreelance.Web.ViewModels.AdminAuditPage
+@{ ViewBag.Title = "Nhật ký kiểm duyệt"; }
+<section class="page-header"><h1>Nhật ký kiểm duyệt</h1><p>@Model.Total bản ghi phù hợp. Thời gian hiển thị UTC+7; ngày lọc theo UTC.</p></section>
+<nav class="action-group" aria-label="Điều hướng quản trị"><a class="btn btn-outline" href="@Url.Action("Users")">Tra cứu tài khoản</a><a class="btn btn-outline" href="@Url.Action("Activity")">Lượt truy cập chức năng</a></nav>
+@using (Html.BeginForm("Audit", "Admin", FormMethod.Get, new { @class = "filter-toolbar" })) {
+    if (Model.UserId.HasValue) { <input type="hidden" name="userId" value="@Model.UserId" /> }
+    <div class="filter-field"><label for="audit-q">Tên, email hoặc lý do</label><input id="audit-q" name="q" type="search" maxlength="120" value="@Model.Query" /></div>
+    <div class="filter-field"><label for="audit-action">Mã thao tác chính xác</label><input id="audit-action" name="actionFilter" maxlength="40" value="@Model.Action" placeholder="Ví dụ: SuspendUser" /></div>
+    <div class="filter-field"><label for="audit-from">Từ ngày (UTC)</label><input id="audit-from" name="from" type="date" value="@Model.From" /></div>
+    <div class="filter-field"><label for="audit-to">Đến hết ngày (UTC)</label><input id="audit-to" name="to" type="date" value="@Model.To" /></div>
+    <button class="btn btn-primary" type="submit">Lọc nhật ký</button><a class="btn btn-outline" href="@Url.Action("Audit")">Xóa bộ lọc</a>
+}
+@if (Model.UserId.HasValue) { <p>Đang lọc người thực hiện hoặc đối tượng #@Model.UserId · <a href="@Url.Action("UserProfile", new { id = Model.UserId })">Xem hồ sơ</a></p> }
+@if (Model.Logs.Count == 0) { <div class="panel empty"><h2>Không có bản ghi phù hợp</h2><p>Thử mở rộng khoảng ngày hoặc xóa bộ lọc.</p></div> }
+else {
+    <section class="panel table-panel" aria-label="Nhật ký thay đổi"><p class="table-hint">↔ Kéo ngang để xem đủ các cột.</p><div class="table-scroll" tabindex="0" role="region" aria-label="Bảng nhật ký có thể cuộn ngang">
+        <table class="data-table"><caption>Thời gian UTC+7. Thay đổi danh mục có thể ghi quản trị viên thực hiện ở cột đối tượng.</caption>
+            <thead><tr><th scope="col">Thời gian (UTC+7)</th><th scope="col">Thao tác</th><th scope="col">Người thực hiện / Đối tượng</th><th scope="col">Lý do</th></tr></thead>
+            <tbody>@foreach (var log in Model.Logs) {
+                <tr><td><time datetime="@log.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")">@DisplayTime.Vietnam(log.CreatedAtUtc)</time></td>
+                    <td><a href="@Url.Action("AuditDetails", new { id = log.Id })"><strong>@log.Action</strong> · #@log.Id</a></td>
+                    <td class="cell-account"><a href="@Url.Action("UserProfile", new { id = log.ActorId })">@log.Actor</a><small>Đối tượng: <a href="@Url.Action("UserProfile", new { id = log.TargetUserId })">@log.Target</a></small></td><td class="cell-reason">@log.Reason</td></tr>
+            }</tbody>
+        </table>
+    </div></section>
+}
+<nav class="pagination" aria-label="Phân trang nhật ký">
+    @if (Model.Page > 1) { <a href="@Url.Action("Audit", new { q = Model.Query, actionFilter = Model.Action, from = Model.From, to = Model.To, userId = Model.UserId, page = Model.Page - 1 })">← Trang trước</a> }
+    <span>Trang @Model.Page / @Model.PageCount</span>
+    @if (Model.Page < Model.PageCount) { <a href="@Url.Action("Audit", new { q = Model.Query, actionFilter = Model.Action, from = Model.From, to = Model.To, userId = Model.UserId, page = Model.Page + 1 })">Trang sau →</a> }
+</nav>

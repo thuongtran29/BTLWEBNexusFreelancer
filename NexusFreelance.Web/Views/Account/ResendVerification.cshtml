@@ -1,0 +1,22 @@
+@model NexusFreelance.Web.ViewModels.ForgotPasswordForm
+@{ ViewBag.Title = "Nhận lại mã xác minh"; }
+<div class="auth-panel panel">
+    <span class="eyebrow">EMAIL VERIFICATION</span>
+    <h1>Nhận lại mã xác minh</h1>
+    @Html.Partial("_MailDeliveryNotice")
+    <p class="muted">Chọn đúng vai trò và nhập email đã đăng ký. Client/Freelancer nhận mã 6 số có hiệu lực 10 phút; Quản trị nhận liên kết có hiệu lực 24 giờ.</p>
+    @if (ViewBag.RequestAccepted == true)
+    {
+        <p role="status" class="muted">Nếu tài khoản cần xác minh và hệ thống đã cấu hình gửi thư, bạn sẽ nhận được email. Hãy kiểm tra cả thư mục spam.</p>
+    }
+    @using (Html.BeginForm("ResendVerification", "Account", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(false, "", new { @class = "error-list" })
+        <label for="Role">Vai trò cần khôi phục / xác minh</label><select id="Role" name="Role"><option value="Client">Client</option><option value="Freelancer">Freelancer</option><option value="Admin">Quản trị</option></select>
+    <label for="Email">Email đăng ký</label>
+        @Html.TextBoxFor(m => m.Email, new { type = "email", required = "required", maxlength = "200", autocomplete = "email" })
+        <button class="btn btn-primary full" type="submit">Gửi yêu cầu xác minh</button>
+    }
+    <p class="muted"><a href="@Url.Action("Login", "Account")">Quay lại đăng nhập</a></p>
+</div>

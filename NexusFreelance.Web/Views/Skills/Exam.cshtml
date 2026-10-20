@@ -1,0 +1,75 @@
+@model NexusFreelance.Web.ViewModels.SkillExamPage
+@{ ViewBag.Title = "Bài thi " + Model.Title; }
+<div class="page-head"><span class="eyebrow">SKILL EXAM</span><h1>@Model.Title</h1><p>@Model.Description</p>
+    <p class="muted">Phải đạt trên 80% số câu đúng · Còn @Model.RemainingAttempts lượt trong 24 giờ. Đáp án được chấm tại máy chủ.</p>
+</div>
+@if (Model.EarnedBadge)
+{
+    <section class="panel section-small"><h2>✓ Đã nhận Badge</h2><p>Bạn đã vượt qua bài kiểm tra nhập môn này.</p>
+        <a class="btn btn-primary" href="@Url.Action("Index", "Skills")">Xem Badge của tôi</a></section>
+}
+else if (Model.RemainingAttempts == 0)
+{
+    <section class="panel section-small"><h2>Hết lượt thi</h2><p>Giới hạn 3 lượt trong 24 giờ tính từ từng lần nộp. Vui lòng quay lại sau.</p>
+        <a class="btn btn-outline" href="@Url.Action("Index", "Skills")">Trung tâm kỹ năng</a></section>
+}
+else if (Model.Questions == null || Model.Questions.Count == 0)
+{
+    <div class="empty">Bộ câu hỏi chưa được khởi tạo đầy đủ.</div>
+}
+else
+{
+    <div class="panel section-small" role="status">
+        <strong>Thời gian làm bài: <span id="exam-clock">20:00</span></strong>
+        <p class="muted">Bài thi có giới hạn 20 phút. Đồng hồ chỉ để tham khảo; hạn nộp được kiểm tra tại máy chủ.</p>
+        <p id="exam-expired" class="muted" hidden>Đã hết thời gian. Tải lại trang để mở phiên thi mới.</p>
+    </div>
+    using (Html.BeginForm("Submit", "Skills", new { id = Model.SkillTrackId }, FormMethod.Post, new { id = "skill-exam-form" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="SkillTrackId" value="@Model.SkillTrackId" />
+        <input type="hidden" name="ExamTicket" value="@Model.ExamTicket" />
+        <input type="hidden" name="BrowserFocusLossCount" id="exam-focus-loss" value="0" />
+        for (var i = 0; i < Model.Questions.Count; i++)
+        {
+            var question = Model.Questions[i];
+            <fieldset class="panel section-small skill-question">
+                <legend class="sr-only">Câu @question.Ordinal</legend>
+                <input type="hidden" name="Answers[@i].QuestionId" value="@question.Id" />
+                <h3>Câu @question.Ordinal. @question.Prompt</h3>
+                <label class="skill-option"><input type="radio" name="Answers[@i].Choice" value="A" required /> A. @question.ChoiceA</label>
+                <label class="skill-option"><input type="radio" name="Answers[@i].Choice" value="B" required /> B. @question.ChoiceB</label>
+                <label class="skill-option"><input type="radio" name="Answers[@i].Choice" value="C" required /> C. @question.ChoiceC</label>
+                <label class="skill-option"><input type="radio" name="Answers[@i].Choice" value="D" required /> D. @question.ChoiceD</label>
+            </fieldset>
+        }
+        <div class="toolbar"><button id="exam-submit" class="btn btn-primary" type="submit">Nộp bài &amp; chấm điểm</button>
+            <a class="btn btn-outline" href="@Url.Action("Index", "Skills")">Quay lại</a></div>
+    }
+    <script>
+    (function () {
+        'use strict';
+        var deadline = Date.now() + @Model.ExamDurationSeconds * 1000;
+        var clock = document.getElementById('exam-clock');
+        var form = document.getElementById('skill-exam-form');
+        var submit = document.getElementById('exam-submit');
+        var focusLoss = document.getElementById('exam-focus-loss');
+        var expired = document.getElementById('exam-expired');
+        function tick() {
+            var remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+            clock.textContent = Math.floor(remaining / 60).toString().padStart(2, '0') + ':' + (remaining % 60).toString().padStart(2, '0');
+            if (remaining === 0) {
+                submit.disabled = true;
+                expired.hidden = false;
+                clearInterval(interval);
+            }
+        }
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) focusLoss.value = Math.min(999, Number(focusLoss.value) + 1);
+        });
+        form.addEventListener('submit', function () { submit.disabled = true; });
+        var interval = setInterval(tick, 1000);
+        tick();
+    })();
+    </script>
+}

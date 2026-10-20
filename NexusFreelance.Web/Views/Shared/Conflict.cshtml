@@ -1,0 +1,13 @@
+@{ ViewBag.Title = "Kiểm tra lại điều kiện thao tác"; }
+<section class="panel form-panel section-small" role="alert">
+    <span class="eyebrow">KIỂM TRA TRẠNG THÁI</span>
+    <h1>Không thể thực hiện thao tác</h1>
+    <p>Thao tác chưa đáp ứng điều kiện hoặc dữ liệu đã thay đổi. Hãy mở lại trang quản lý, kiểm tra các bước cần hoàn thành rồi thử lại.</p>
+    @if(!string.IsNullOrWhiteSpace((string)ViewBag.ConflictReason)){<p><strong>Điều kiện cần kiểm tra:</strong> @ViewBag.ConflictReason</p>}
+    @if ((string)ViewContext.RouteData.Values["controller"] == "Projects" && (string)ViewContext.RouteData.Values["action"] == "Publish")
+    {
+        <p>Dự án cần ở trạng thái bản nháp và có ít nhất một vị trí tuyển dụng trước khi công bố.</p>
+        <a class="btn btn-primary" href="@Url.Action("Manage", "Projects", new { id = ViewContext.RouteData.Values["id"] })">Quay lại quản lý dự án</a>
+    }
+    <a class="btn btn-outline" href="@Url.Action("Index", (string)ViewBag.CurrentRole == "Admin" ? "Admin" : "Dashboard")">Về tổng quan</a>
+</section>

@@ -1,0 +1,8 @@
+.EasyMDEContainer { min-width: 0; margin-bottom: 12px; }
+.EasyMDEContainer .editor-toolbar { display: flex; flex-wrap: wrap; gap: 4px; border-color: #cbd5e1; }
+.EasyMDEContainer .editor-toolbar button { width: auto; min-width: 44px; height: 40px; padding: 0 8px; font: inherit; font-size: 13px; color: #263b50; }
+.EasyMDEContainer .editor-toolbar button:focus-visible { outline: 2px solid #007f73; outline-offset: 2px; }
+.EasyMDEContainer .CodeMirror { font: inherit; line-height: 1.6; border-color: #cbd5e1; border-radius: 0 0 8px 8px; }
+.EasyMDEContainer .CodeMirror-wrap pre { overflow-wrap: anywhere; }
+.EasyMDEContainer .editor-preview { overflow-wrap: anywhere; }
+.project-description-plain .CodeMirror { border-radius: 8px; }

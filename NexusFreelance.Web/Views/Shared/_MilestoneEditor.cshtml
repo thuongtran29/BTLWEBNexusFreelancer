@@ -1,0 +1,12 @@
+@model NexusFreelance.Web.ViewModels.MilestoneEditor
+<fieldset class="milestone-editor" data-plan-editor data-plan-total-selector="@Model.TotalSelector" data-plan-days-selector="@Model.DeliverySelector" data-plan-fixed-total="@(Model.FixedTotal.HasValue?Model.FixedTotal.Value.ToString("0",System.Globalization.CultureInfo.InvariantCulture):null)" data-plan-id="@Model.Id">
+    <legend>@(Model.IsGroup?"Mốc bàn giao chung của cả nhóm":"Mốc bàn giao của bạn")</legend>
+    <p class="form-help">@(Model.IsGroup?"Tiền của mỗi mốc thuộc hợp đồng chung. Sau nghiệm thu, phần còn lại sau phí được chia theo giá chào của từng thành viên đã xác nhận; không chia lại theo số nhiệm vụ.":"Mỗi mốc gắn với một kết quả có thể kiểm tra. Bạn nhận phần thanh toán sau phí khi khách hàng nghiệm thu mốc đó.")</p>
+    <label for="@Model.Id-mode">Cách bàn giao &amp; thanh toán</label>
+    <select id="@Model.Id-mode" data-plan-mode><option value="single">Một lần khi hoàn thành toàn bộ</option><option value="staged">Chia thành các mốc bàn giao</option></select>
+    <p data-plan-single class="form-help">Một mốc toàn bộ giá chào, hoàn thành trong thời gian thực hiện đã nhập. Tiêu chí: hoàn thành phạm vi và sản phẩm đã thống nhất trong hợp đồng.</p>
+    <div data-plan-rows></div><button type="button" class="btn btn-outline" data-plan-add hidden>+ Thêm mốc</button>
+    <p class="plan-feedback" data-plan-feedback role="status" aria-live="polite"></p>
+    <p class="form-help">Ngày hạn là ngày thứ bao nhiêu kể từ lúc mốc đầu được ký quỹ; phải trong thời gian thực hiện. Tổng tiền các mốc phải bằng giá chào. Tối đa 20 mốc, toàn bộ kế hoạch không quá 4000 ký tự.</p>
+    <div data-plan-fallback><label for="@Model.Id-value">Kế hoạch mốc nhập thủ công (khi trình duyệt không hỗ trợ trình soạn)</label><textarea id="@Model.Id-value" name="@Model.FieldName" data-plan-value rows="3" maxlength="4000" placeholder="Tiêu đề | Số tiền nguyên VND">@Model.Plan</textarea></div>
+</fieldset>

@@ -1,0 +1,62 @@
+@using NexusFreelance.Web.Services
+@model NexusFreelance.Web.ViewModels.AdminBadgesPage
+@{ ViewBag.Title = "Quản trị Badge"; }
+<section class="page-header">
+    <h1>Quản trị Badge nội bộ</h1>
+    <p>Kiểm tra minh chứng bài thi, thu hồi Badge không hợp lệ và theo dõi lịch sử. Badge thu hồi ngừng tính điểm cho các đề xuất mới; điểm Matching đã lưu trước đó không thay đổi.</p>
+</section>
+<p><a href="@Url.Action("Index", "Admin")">← Tổng quan quản trị</a> · <a href="@Url.Action("Audit", "Admin")">Nhật ký quản trị</a></p>
+<div class="card">
+    @using (Html.BeginForm("Badges", "Admin", FormMethod.Get))
+    {
+        <label for="badge-query">Tìm theo tên, email hoặc kỹ năng</label>
+        <input id="badge-query" name="q" type="search" value="@Model.Query" maxlength="120" />
+        <label for="badge-status">Trạng thái</label>
+        <select id="badge-status" name="status">
+            <option value="Active" @(Model.Status == "Active" ? "selected" : "")>Đang có hiệu lực</option>
+            <option value="Revoked" @(Model.Status == "Revoked" ? "selected" : "")>Đã thu hồi</option>
+            <option value="All" @(Model.Status == "All" ? "selected" : "")>Tất cả</option>
+        </select>
+        <button class="btn btn-primary" type="submit">Lọc Badge</button>
+    }
+</div>
+<p role="status">Có @Model.Total Badge phù hợp.</p>
+@if (Model.Badges.Count == 0)
+{
+    <div class="empty">Không có Badge trong bộ lọc này.</div>
+}
+@foreach (var badge in Model.Badges)
+{
+    <article class="card">
+        <h2>@badge.SkillTrack.Title · @badge.Tier</h2>
+        <p><a href="@Url.Action("UserProfile", new { id = badge.UserAccountId })"><strong>@badge.User.Name</strong></a> · @badge.User.Email</p>
+        <p>Bài thi #@badge.EvidenceAttemptId · @badge.EvidenceAttempt.Percent% · cấp lúc @DisplayTime.Vietnam(badge.IssuedAtUtc)</p>
+        @if (badge.RevokedAtUtc.HasValue)
+        {
+            <p role="status">Đã thu hồi @DisplayTime.Vietnam(badge.RevokedAtUtc.Value) @if (badge.RevokedById.HasValue) { <span>bởi <a href="@Url.Action("UserProfile", new { id = badge.RevokedById })">@(badge.RevokedBy == null ? "Hồ sơ #" + badge.RevokedById : badge.RevokedBy.Email)</a></span> }</p>
+            <p>Lý do: @badge.RevocationReason</p>
+        }
+        else
+        {
+            using (Html.BeginForm("RevokeBadge", "Admin", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BadgeId" value="@badge.Id" />
+                <label for="revoke-reason-@badge.Id">Lý do thu hồi (lưu trong audit và thông báo)</label>
+                <input id="revoke-reason-@badge.Id" name="Reason" required minlength="5" maxlength="170" placeholder="Nêu rõ lý do kiểm duyệt" />
+                <button class="btn btn-outline" type="submit">Thu hồi Badge</button>
+            }
+        }
+    </article>
+}
+<nav aria-label="Phân trang Badge">
+    @if (Model.Page > 1)
+    {
+        <a href="@Url.Action("Badges", new { q = Model.Query, status = Model.Status, page = Model.Page - 1 })">← Trang trước</a>
+    }
+    Trang @Model.Page / @Model.PageCount
+    @if (Model.Page < Model.PageCount)
+    {
+        <a href="@Url.Action("Badges", new { q = Model.Query, status = Model.Status, page = Model.Page + 1 })">Trang sau →</a>
+    }
+</nav>

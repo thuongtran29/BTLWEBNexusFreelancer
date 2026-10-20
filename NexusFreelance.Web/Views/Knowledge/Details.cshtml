@@ -1,0 +1,6 @@
+@model NexusFreelance.Web.ViewModels.SharedKnowledgeCard
+@{ViewBag.Title=Model.Title;}
+<div class="page-head"><span class="eyebrow">TRI THỨC CHUNG · @Model.Industry</span><h1>@Model.Title</h1><p>Phiên bản @Model.Version · Chia sẻ @Model.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm") UTC+7</p></div>
+<section class="panel knowledge-read"><h2>Tình huống áp dụng</h2><p>@Model.Summary</p><h2>Kinh nghiệm và cách làm</h2><p>@Model.Practices</p><h2>Tiêu chí có thể tái sử dụng</h2><p>@Model.AcceptanceChecklist</p><h2>Kỹ năng liên quan</h2><p>@Model.SkillTags</p></section>
+<div class="toolbar"><a class="btn btn-outline" href="@Url.Action("Index")">Về kho tri thức</a>@if((string)ViewBag.CurrentRole=="Client"){<a class="btn btn-primary" href="@Url.Action("New","JobStudio")">Tạo JD với tri thức tham khảo</a>}</div>
+@if((bool)ViewBag.CanWithdraw){<details class="panel section-small"><summary>Ngừng chia sẻ bài học</summary>@using(Html.BeginForm("Withdraw","Knowledge",new{id=Model.Id},FormMethod.Post,new{data_confirm="Ngừng dùng bài học này cho những lần tạo JD mới?"})){@Html.AntiForgeryToken()<label for="withdraw-knowledge">Lý do</label><input id="withdraw-knowledge" name="reason" minlength="5" maxlength="200" required/><button class="btn btn-outline" type="submit">Ngừng chia sẻ</button>}</details>}

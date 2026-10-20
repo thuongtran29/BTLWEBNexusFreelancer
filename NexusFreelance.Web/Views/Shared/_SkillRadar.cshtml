@@ -1,0 +1,19 @@
+@model System.Collections.Generic.List<NexusFreelance.Web.ViewModels.VerifiedSkillRow>
+@using System.Globalization
+@{ var skills = Model.Take(6).ToList(); var points = new System.Collections.Generic.List<string>();
+   for(var i=0;i<6;i++) { var value = i < skills.Count ? Math.Max(0, Math.Min(5, skills[i].Level))/5.0 : 0;
+       var angle = (i*60-90)*Math.PI/180; points.Add((150+100*value*Math.Cos(angle)).ToString("0.##",CultureInfo.InvariantCulture)+","+(135+100*value*Math.Sin(angle)).ToString("0.##",CultureInfo.InvariantCulture)); } }
+<div class="skill-dna">
+    <svg class="skill-radar" viewBox="0 0 300 280" role="img" aria-label="Biểu đồ Skill DNA: phần trăm bằng mức được xác minh chia cho 5; các trục chưa có minh chứng bằng 0">
+        <title>Skill DNA từ minh chứng đang có hiệu lực</title>
+        @foreach(var radius in new[] { 20,40,60,80,100 }) { <circle cx="150" cy="135" r="@radius" class="radar-grid" /> }
+        @for(var i=0;i<6;i++) { var angle=(i*60-90)*Math.PI/180; <line x1="150" y1="135" x2="@((150+100*Math.Cos(angle)).ToString("0.##",CultureInfo.InvariantCulture))" y2="@((135+100*Math.Sin(angle)).ToString("0.##",CultureInfo.InvariantCulture))" class="radar-grid" /> }
+        <polygon points="@string.Join(" ",points)" class="radar-shape" />
+        @for(var i=0;i<6;i++) { var angle=(i*60-90)*Math.PI/180; <g><text x="@((150+119*Math.Cos(angle)).ToString("0.##",CultureInfo.InvariantCulture))" y="@((139+119*Math.Sin(angle)).ToString("0.##",CultureInfo.InvariantCulture))" text-anchor="middle">@(i<skills.Count ? (i+1).ToString() : "—")</text></g> }
+    </svg>
+    <div class="radar-legend">
+    @if(!skills.Any()) { <p class="empty">Chưa có kỹ năng được xác minh. Hoàn thành bài kiểm tra nội bộ hoặc gửi chứng chỉ để bắt đầu xây dựng Skill DNA.</p> }
+    @for(var i=0;i<skills.Count;i++) { var skill=skills[i]; <div class="skill-meter"><div><strong>@(i+1). @skill.Title</strong><span>@(skill.Level*20)% · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(skill.Level)</span></div><meter min="0" max="100" value="@(skill.Level*20)" aria-label="@skill.Title @(skill.Level*20) phần trăm">@(skill.Level*20)%</meter><small>@skill.Evidence</small></div> }
+    <p class="form-help">Thang 1–5 tương ứng 20–100%. Chứng chỉ nội bộ ghi nhận mức nền tảng, không khẳng định trình độ chuyên gia. XP và đóng góp dự án được trình bày riêng.</p>
+    </div>
+</div>

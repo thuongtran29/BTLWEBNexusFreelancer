@@ -1,0 +1,33 @@
+@using System.Collections.Generic
+@using NexusFreelance.Web.Models
+@model List<ContributionRecord>
+@{
+    ViewBag.Title = "Đóng góp và XP";
+    var roles = (Dictionary<int, string>)ViewBag.RoleByContribution;
+}
+<div class="page-head">
+    <span class="eyebrow">FREELANCER · PROJECT EVIDENCE</span>
+    <h1>Đóng góp &amp; Skill DNA</h1>
+    <p class="muted">Tổng XP đã ghi nhận: <strong>@ViewBag.XpTotal</strong>. Đây là tín hiệu tham khảo từ dự án đã hoàn thành và được Client đánh giá, không phải chứng chỉ năng lực.</p>
+</div>
+<section class="panel section-small"><h2>Skill DNA của bạn</h2>@Html.Partial("_SkillRadar", (System.Collections.Generic.List<NexusFreelance.Web.ViewModels.VerifiedSkillRow>)ViewBag.CoreSkills)</section>
+<section class="panel section-small">
+    <h2>Lịch sử dự án đã đánh giá</h2>
+    @if (Model.Count == 0)
+    {
+        <p class="empty">Chưa có bản ghi đóng góp. Sau khi Client hoàn tất dự án và đánh giá, lịch sử sẽ xuất hiện tại đây.</p>
+    }
+    else
+    {
+        foreach (var record in Model)
+        {
+            <article class="memory-read contribution-item">
+                <h3><a href="@Url.Action("Details", "Projects", new { id = record.ProjectId })">Dự án #@record.ProjectId</a> · @record.EvidenceScore XP</h3>
+                <p>Vai trò: @(roles.ContainsKey(record.Id) ? roles[record.Id] : "Chưa ghi nhận")</p>
+                <p>Task hoàn tất: @record.DoneTasks · Bản bàn giao hiện hành đã duyệt: @record.ApprovedDeliverables · Đánh giá Client: @record.ClientRating/5</p>
+                <p class="muted">Phương pháp @record.Method · @record.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") UTC</p>
+            </article>
+        }
+    }
+    <p class="muted">Quy tắc ReviewSnapshot-v1: 10 điểm/task Done + 20 điểm/bàn giao đã duyệt + 10 điểm/mức sao, tối đa 100 XP cho mỗi lần đánh giá dự án. Các con số mô tả bằng chứng hoạt động; không chứng minh chất lượng hoặc mức nỗ lực.</p>
+</section>

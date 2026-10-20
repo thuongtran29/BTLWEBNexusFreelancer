@@ -1,0 +1,28 @@
+@model IEnumerable<NexusFreelance.Web.Models.Proposal>
+@{
+    ViewBag.Title = "Đề xuất của tôi";
+    var scores = (ViewBag.Scores as System.Collections.Generic.Dictionary<int, NexusFreelance.Web.Models.MatchingResult>) ??
+        new System.Collections.Generic.Dictionary<int, NexusFreelance.Web.Models.MatchingResult>();
+}
+<div class="page-head"><span class="eyebrow">THEO DÕI ỨNG TUYỂN</span><h1>Đề xuất đã gửi</h1><p>Mỗi đề xuất là một chào giá cho vai trò cụ thể, kèm phương án và thời gian làm việc của bạn.</p></div>
+<div class="page-explainer"><strong>Sau khi gửi đề xuất</strong><span>Khách hàng xem hồ sơ &amp; trao đổi</span><span>Được chọn → hai phía xác nhận hợp đồng</span><span>Khách hàng ký quỹ → bắt đầu làm việc</span><a href="@Url.Action("Index","Contracts")">Mở hợp đồng của tôi →</a></div>
+@if (!Model.Any()) { <div class="empty">Bạn chưa gửi đề xuất nào. <a href="@Url.Action("Index", "Home")">Tìm dự án →</a></div> }
+@foreach (var p in Model)
+{
+    <article class="list-item proposal-row" data-proposal-id="@p.Id"><div><span class="pill">@NexusFreelance.Web.Services.WorkLabels.Proposal(p.Status)</span><h3><a href="@Url.Action("Details", "Projects", new { id = p.ProjectId })">@p.Project.Title</a></h3><p class="muted">@p.Requirement.Title · @p.QuotedPrice.ToString("N0") VND</p>
+        <p>@p.DeliveryDays ngày @if(!p.GroupBidId.HasValue || p.GroupBid.LeaderId==(int)ViewBag.CurrentUserId){<a class="btn btn-outline" href="@Url.Action("Thread", "Negotiation", new { proposalId = p.Id })">Trao đổi trước hợp đồng →</a>}</p>@Html.Partial("_ProposalPlan",p)
+        @if (scores.ContainsKey(p.Id)) { <p><strong>Matching: @scores[p.Id].TotalPoints/100</strong></p><small>@scores[p.Id].Explanation</small> }
+        else { <small>Chưa có điểm Matching cho đề xuất cũ.</small> }
+    </div><div><span class="muted">@p.CreatedAtUtc.ToString("dd/MM/yyyy")</span>
+        @if (p.GroupBidId.HasValue) { <small>Proposal nhóm #@p.GroupBidId · Leader quản lý cả đội hình.</small> }
+        @if ((p.Status == "Pending" || p.Status == "Shortlisted") && !p.GroupBidId.HasValue)
+        {
+            using (Html.BeginForm("Withdraw", "Proposals", new { id = p.Id }, FormMethod.Post, new { data_confirm = "Rút đề xuất này? Bạn không thể gửi lại cho cùng vị trí. Lịch sử vẫn được giữ." }))
+            {
+                @Html.AntiForgeryToken()
+                <button class="btn btn-outline" type="submit">Rút đề xuất</button>
+            }
+        }
+    </div></article>
+}
+

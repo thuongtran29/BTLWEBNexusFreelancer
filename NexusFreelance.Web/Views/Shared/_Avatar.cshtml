@@ -1,0 +1,6 @@
+@model NexusFreelance.Web.ViewModels.AvatarView
+@{ var name = string.IsNullOrWhiteSpace(Model.Name) ? "Thành viên" : Model.Name.Trim(); var hasImage = Model.Id > 0 && System.IO.File.Exists(Server.MapPath("~/App_Data/ProfileImages/" + Model.Id + ".jpg")); }
+<span class="person-avatar avatar-@Model.Size" aria-hidden="true">
+    <span>@System.Globalization.StringInfo.GetNextTextElement(name).ToUpperInvariant()</span>
+    @if (hasImage) { <img src="@Url.Action("Show", "ProfileImage", new { id=Model.Id })" alt="" width="64" height="64" loading="lazy" decoding="async" /> }
+</span>

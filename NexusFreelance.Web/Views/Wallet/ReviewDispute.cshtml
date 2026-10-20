@@ -1,0 +1,25 @@
+@model NexusFreelance.Web.Models.EscrowDispute
+@using NexusFreelance.Web.Models
+@using NexusFreelance.Web.Services
+@{ ViewBag.Title = "Hồ sơ tranh chấp #" + Model.Id; var milestones = (List<EscrowMilestone>)ViewBag.Milestones; var held = milestones.Where(m => m.Status == "Funded" || m.Status == "Submitted" || m.Status == "RevisionsRequested").Sum(m => m.Amount); var workspaces = (List<Workspace>)ViewBag.Workspaces; }
+<div class="page-head"><span class="eyebrow">QUẢN TRỊ · XỬ LÝ TRANH CHẤP</span><h1>@ViewBag.Title</h1><p>@Model.Project.Title · Người báo cáo: @Model.Reporter.Name · @Model.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") UTC</p><span class="pill">@(Model.Status == "Pending" ? "Chờ xử lý" : "Đã có quyết định")</span></div>
+<div class="dispute-actions">
+<a class="btn btn-outline" href="@Url.Action("UserProfile", "Admin", new { id=Model.ReporterId })">Hồ sơ người gửi khiếu nại</a>
+<a class="btn btn-outline" href="@Url.Action("UserProfile", "Admin", new { id=Model.Project.ClientId })">Hồ sơ khách hàng</a>
+@if(Model.ContractId.HasValue) { <a class="btn btn-outline" href="@Url.Action("Details", "Contracts", new { id = Model.ContractId })">Điều khoản &amp; xác nhận hai phía</a> }
+@foreach(var workspace in workspaces) { <a class="btn btn-primary" href="@Url.Action("Index", "Workspace", new { id = workspace.Id })">Xem kênh làm việc #@workspace.Id</a> }
+<a class="btn btn-outline" href="@Url.Action("Admin")">Các hồ sơ cần xử lý</a></div>
+<section class="panel section-small"><h2>Nội dung và bằng chứng cần kiểm tra</h2><p class="description">@Model.Reason</p><p>Đối chiếu điều khoản đã ký, tiêu chí mốc, bản bàn giao và hội thoại của đúng hợp đồng trước khi quyết định. Mỗi hợp đồng của một dự án có sổ tiền riêng.</p></section>
+<section class="panel section-small"><h2>Các mốc thuộc hồ sơ</h2>
+@foreach(var milestone in milestones) { <div class="list-item"><div><h3>@milestone.Title</h3><p>@milestone.AcceptanceCriteria</p><p class="muted">@ContractPresentation.Status(milestone.Status)</p></div><strong>@milestone.Amount.ToString("N0") VND</strong></div> }
+<p class="alert info">Đang giữ, chưa quyết toán: <strong>@held.ToString("N0") VND</strong>. Khoản đã quyết toán trước đó không bị ghi lại khi xử lý hồ sơ này.</p></section>
+@if(Model.Status == "Pending") {
+<section class="panel form-panel section-small"><h2>Ghi quyết định</h2><p>Nhập số tiền hoàn khách hàng. Phần còn lại được quyết toán cho người làm theo tỷ lệ hợp đồng sau phí nền tảng.</p>
+@using(Html.BeginForm("Resolve", "Wallet", new { id = Model.Id }, FormMethod.Post, new { data_confirm="Chốt tranh chấp và quyết toán số tiền của đúng các mốc đang giữ? Hãy kiểm tra bằng chứng và số tiền hoàn trước khi xác nhận." })) {
+    @Html.AntiForgeryToken()<label for="dispute-refund">Hoàn khách hàng (VND)</label><input id="dispute-refund" name="refund" type="number" min="0" max="@held.ToString("0")" step="1" required />
+    <div class="toolbar"><button class="btn btn-outline" type="button" data-refund-target="dispute-refund" data-refund-amount="0">Giải ngân phần đang giữ</button><button class="btn btn-outline" type="button" data-refund-target="dispute-refund" data-refund-amount="@held.ToString("0")">Hoàn toàn bộ phần đang giữ</button></div>
+    <label for="dispute-reason">Căn cứ và kết luận (15–1000 ký tự)</label><textarea id="dispute-reason" name="reason" rows="5" minlength="15" maxlength="1000" required placeholder="Nêu bằng chứng, tiêu chí đã/chưa đạt, số tiền và hướng xử lý..."></textarea>
+    <button class="btn btn-primary" type="submit">Xác nhận quyết định &amp; ghi sổ</button>
+}
+</section>
+} else { <section class="panel section-small"><h2>Kết luận đã lưu</h2><p class="description">@Model.Resolution</p><p>@Model.ReviewedAtUtc</p></section> }

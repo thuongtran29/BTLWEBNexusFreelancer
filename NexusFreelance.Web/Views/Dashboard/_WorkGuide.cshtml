@@ -1,0 +1,39 @@
+@model NexusFreelance.Web.ViewModels.DashboardPage
+@{
+    var client=Model.Role=="Client";
+    var pending=Model.DisputedContracts+Model.ContractsToConfirm+(client?Model.ContractsToFund+Model.ContractsToReview+Model.PendingProposals+Model.DraftProjects:Model.OpenTasks+Model.Invitations);
+    var startController=client?"Projects":"Home"; var startAction=client?"Create":"Index"; string startStage=null;
+    var startTitle=client?"Bắt đầu một dự án mới":"Tìm dự án phù hợp với bạn";
+    var startDescription=client?"Mô tả kết quả cần nhận, đặt ngân sách và lưu nháp để chuẩn bị tuyển người.":"Lọc theo ngành, hình thức cá nhân/nhóm, ngân sách và thời hạn.";
+    if(Model.ActiveContracts>0) { startController="Contracts";startAction="Index";startStage="active";startTitle="Tiếp tục công việc đang thực hiện";startDescription="Theo dõi nhiệm vụ và các mốc bàn giao trong từng hợp đồng."; }
+    else if(client && Model.PublishedProjects>0) { startController="Projects";startAction="Mine";startTitle="Theo dõi dự án đang tuyển người";startDescription="Chưa có đề xuất mới cần xử lý. Kiểm tra yêu cầu tuyển và trang dự án đã công bố."; }
+    else if(!client && Model.PendingProposals>0) { startController="Proposals";startAction="Mine";startTitle="Theo dõi đề xuất đã gửi";startDescription="Khách hàng đang xem chào giá. Bạn có thể mở lịch sử và tiếp tục trao đổi trước hợp đồng."; }
+}
+<section class="work-guide" data-journey-role="@Model.Role" aria-labelledby="next-work-title">
+    <div class="heading-row"><div><span class="eyebrow">BẢNG CÔNG VIỆC CỦA BẠN</span><h2 id="next-work-title">Việc cần làm tiếp</h2></div><a class="text-link" href="@Url.Action("HowItWorks","Home")">Xem hướng dẫn</a></div>
+    <div class="next-actions">
+        @if(Model.DisputedContracts>0) { <a class="next-action" data-next-action="issues" href="@Url.Action("Index","Contracts",new{stage="issues"})">@Html.Partial("_Icon","shield")<span><strong>Theo dõi tranh chấp đang xử lý</strong><small>@Model.DisputedContracts hợp đồng đang tạm dừng để giải quyết tranh chấp. Kiểm tra thông tin và quyết định mới.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(Model.ContractsToConfirm>0) { <a class="next-action" data-next-action="confirm" href="@Url.Action("Index","Contracts",new{stage="confirm"})">@Html.Partial("_Icon","document")<span><strong>Xác nhận điều khoản hợp đồng</strong><small>@Model.ContractsToConfirm hợp đồng chờ bạn đọc và đồng ý phiên bản hiện tại.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(client && Model.ContractsToFund>0) { <a class="next-action" data-next-action="fund" href="@Url.Action("Index","Contracts",new{stage="fund"})">@Html.Partial("_Icon","wallet")<span><strong>Ký quỹ để bắt đầu công việc</strong><small>@Model.ContractsToFund hợp đồng đã đủ xác nhận, đang chờ bảo đảm tiền cho mốc đầu.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(client && Model.ContractsToReview>0) { <a class="next-action" data-next-action="review" href="@Url.Action("Index","Contracts",new{stage="review"})">@Html.Partial("_Icon","shield")<span><strong>Kiểm tra sản phẩm bàn giao</strong><small>@Model.ContractsToReview hợp đồng có mốc chờ nghiệm thu. Đọc sản phẩm trước khi quyết định.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(client && Model.PendingProposals>0) { <a class="next-action" data-next-action="proposals" href="@Url.Action("Mine","Projects")">@Html.Partial("_Icon","users")<span><strong>Xem ứng viên và chào giá</strong><small>@Model.PendingProposals đề xuất đang chờ xem hoặc đã được đưa vào danh sách cân nhắc.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(client && Model.NextDraftId.HasValue) { <a class="next-action" data-next-action="drafts" href="@Url.Action("Manage","Projects",new{id=Model.NextDraftId})">@Html.Partial("_Icon","briefcase")<span><strong>Hoàn thiện bản nháp dự án</strong><small>@Model.DraftProjects bản nháp chưa công bố. Tiếp tục bản gần nhất, thêm vị trí rồi đăng tuyển.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(!client && Model.MyTasks.Any()) { <a class="next-action" data-next-action="tasks" href="@Url.Action("Index","Workspace",new{id=Model.MyTasks.First().WorkspaceId})">@Html.Partial("_Icon","grid")<span><strong>Tiếp tục nhiệm vụ được giao</strong><small>@Model.OpenTasks nhiệm vụ chưa xong. Mở không gian làm việc của nhiệm vụ ưu tiên.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(!client && Model.Invitations>0) { <a class="next-action" data-next-action="invitations" href="@Url.Action("Index","Groups")">@Html.Partial("_Icon","users")<span><strong>Trả lời lời mời tham gia nhóm</strong><small>@Model.Invitations lời mời đang chờ. Xem thành viên và chuyên môn trước khi tham gia.</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(!Model.HasProfileIntroduction) { <a class="next-action next-action-soft" data-next-action="profile" href="@Url.Action("Index",client?"ClientProfile":"Profile")">@Html.Partial("_Icon","user")<span><strong>Bổ sung phần giới thiệu hồ sơ</strong><small>@(client?"Giúp ứng viên hiểu bạn và nhu cầu hợp tác.":"Thêm vai trò chính và kinh nghiệm để khách hàng hiểu năng lực của bạn.")</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+        @if(pending==0) { <a class="next-action next-action-start" data-next-action="start" href="@Url.Action(startAction,startController,new{stage=startStage})">@Html.Partial("_Icon",client?"briefcase":"search")<span><strong>@startTitle</strong><small>@startDescription</small></span><span class="action-arrow" aria-hidden="true">→</span></a> }
+    </div>
+    <details class="journey-overview" @(Model.Projects==0?"open":"")><summary>Từng bước để bắt đầu <span>Hiểu quy trình trước khi thao tác</span>@Html.Partial("_Icon","chevron")</summary>
+        <div class="journey-grid">
+        @if(client) {
+            <a href="@Url.Action("Create","Projects")"><span class="step-number">01</span><h3>Chuẩn bị dự án</h3><p>Viết yêu cầu, ngân sách và vị trí cần tuyển.</p><small>Bản nháp: <strong data-work-count="drafts">@Model.DraftProjects</strong></small></a>
+            <a href="@Url.Action("Mine","Projects")"><span class="step-number">02</span><h3>Chọn người phù hợp</h3><p>Đọc hồ sơ, trao đổi và so sánh chào giá.</p><small>Đang tuyển: @Model.PublishedProjects · Chờ xem: @Model.PendingProposals</small></a>
+        } else {
+            <a href="@Url.Action("Index","Profile")"><span class="step-number">01</span><h3>Hoàn thiện hồ sơ</h3><p>Nêu vai trò, kinh nghiệm và sản phẩm đã làm.</p><small>Giới thiệu: @(Model.HasProfileIntroduction?"Đã bổ sung":"Cần bổ sung") · Portfolio: @Model.PortfolioItems</small></a>
+            <a href="@Url.Action("Index","Home")"><span class="step-number">02</span><h3>Tìm dự án &amp; ứng tuyển</h3><p>Gửi phương án, giá và thời gian thực hiện.</p><small>Đề xuất đang chờ: @Model.PendingProposals</small></a>
+        }
+            <a href="@Url.Action("Index","Contracts",new{stage="confirm"})"><span class="step-number">03</span><h3>Thống nhất hợp đồng</h3><p>@(client?"Hai phía xác nhận, sau đó bạn ký quỹ mốc đầu.":"Đọc điều khoản và xác nhận; khách hàng ký quỹ trước khi làm.")</p><small>Cần bạn xác nhận: <strong data-work-count="confirm">@Model.ContractsToConfirm</strong></small></a>
+            <a href="@Url.Action("Index","Contracts",new{stage=client?"review":"active"})"><span class="step-number">04</span><h3>@(client?"Theo dõi & nghiệm thu":"Làm việc & bàn giao")</h3><p>@(client?"Kiểm tra kết quả, yêu cầu sửa hoặc duyệt mốc.":"Nhận nhiệm vụ, nộp sản phẩm và theo dõi tiền được duyệt.")</p><small>Đang thực hiện: @Model.ActiveContracts · Chờ nghiệm thu: @Model.ContractsToReview</small></a>
+        </div>
+    </details>
+</section>

@@ -1,0 +1,22 @@
+@model NexusFreelance.Web.ViewModels.VerifyEmailForm
+@{ ViewBag.Title = "Xác minh email"; }
+<div class="auth-panel panel">
+    <span class="eyebrow">EMAIL VERIFICATION</span>
+    <h1>Xác minh email</h1>
+    @if (ViewBag.InvalidToken == true)
+    {
+        <p role="alert">Liên kết đã hết hạn, không hợp lệ hoặc đã được sử dụng.</p>
+        <p><a class="btn btn-primary" href="@Url.Action("ResendVerification", "Account")">Yêu cầu liên kết mới</a></p>
+    }
+    else
+    {
+        <p class="muted">Xác nhận địa chỉ email để kích hoạt đăng nhập khi hệ thống yêu cầu.</p>
+        using (Html.BeginForm("VerifyEmail", "Account", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.Token)
+            @Html.ValidationSummary(false, "", new { @class = "error-list" })
+            <button class="btn btn-primary full" type="submit">Xác minh email</button>
+        }
+    }
+</div>

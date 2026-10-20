@@ -1,0 +1,4 @@
+@model string
+@{var plan=NexusFreelance.Web.Services.PaymentPlan.Preview(Model);}
+@if(plan.Count>0){<details class="plan-summary"><summary>Kế hoạch @plan.Count mốc bàn giao</summary><ol>@foreach(var item in plan){<li><strong>@item.Title · @item.Amount.ToString("N0") VND</strong>@if(item.DueDay.HasValue){<span> · Ngày thứ @item.DueDay</span>}@if(!string.IsNullOrWhiteSpace(item.AcceptanceCriteria)){<p>@item.AcceptanceCriteria</p>}</li>}</ol></details>}
+else {<p class="muted">Một mốc bàn giao toàn bộ phạm vi trong thời gian đã đề xuất. Điều khoản cuối cùng được hai phía xác nhận trong hợp đồng.</p>}

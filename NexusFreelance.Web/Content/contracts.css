@@ -1,0 +1,39 @@
+.contract-summary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:12px 0 24px}
+.contract-summary .panel {display:flex;flex-direction:column;gap:8px}
+.contract-summary strong,.contract-price {font-size:clamp(20px,2.4vw,29px);letter-spacing:-.7px;overflow-wrap:anywhere}
+.contract-list-row {display:flex;align-items:center;justify-content:space-between;gap:24px;margin:16px 0}
+.contract-list-row h2 {margin:10px 0}
+.contract-list-row>div {min-width:0}
+.contract-list-row>div:last-child {display:flex;flex-direction:column;align-items:flex-end;gap:14px}
+.contract-actions {display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:flex-end}
+.contract-actions form {margin:0}
+.contract-proof {margin-top:20px;border-top:1px solid var(--line);padding-top:16px}
+.contract-proof summary,section.panel>details>summary:not(.btn) {cursor:pointer;font-weight:650;min-height:44px;padding:10px 0}
+.contract-proof code {display:block;overflow-wrap:anywhere;background:var(--cream);padding:12px;border-radius:8px;margin:12px 0;font-size:12px}
+.contract-summary small {font-size:13px}
+@media(max-width:750px){.contract-summary{grid-template-columns:minmax(0,1fr);gap:10px}.contract-summary .panel{padding:18px}.contract-list-row{align-items:stretch;flex-direction:column;gap:12px}.contract-list-row>div:last-child{align-items:flex-start}.contract-actions{justify-content:flex-start}.contract-actions .btn{white-space:normal}.contract-price{font-size:24px}}
+
+.contract-refund {border-top:1px solid var(--line);padding:20px 0;overflow-wrap:anywhere}
+.contract-refund form{margin-top:12px}
+
+/* Received offers are summaries; profiles and negotiation carry the detail. */
+.received-bids{display:grid;gap:16px;margin-top:20px}
+.bid-card{padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--white,#fff);min-width:0}
+.bid-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.bid-identity{display:flex;align-items:center;gap:14px;min-width:0}
+.bid-identity>div{min-width:0}.bid-identity h3{margin:0 0 5px;overflow-wrap:anywhere}.bid-identity p{margin:0}
+.bid-identity h3 a,.public-member-card h3 a{color:var(--ink,#25372e);text-decoration:underline;text-decoration-color:#b4c8ac;text-underline-offset:4px}
+.bid-header>.pill{flex-shrink:0}.group-monogram{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;flex:0 0 48px;border-radius:14px;background:#edf3df;color:#34533f;font-size:23px;font-weight:750}
+.group-monogram-large{width:72px;height:72px;flex-basis:72px;font-size:34px;border-radius:20px}
+.bid-facts,.group-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:18px;margin:22px 0}
+.bid-facts>div,.group-overview>div{min-width:0}.bid-facts dt,.group-overview dt{color:var(--muted,#5e7066);font-size:13px;margin-bottom:7px}
+.bid-facts dd,.group-overview dd{margin:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}.bid-facts .bid-price{font-size:20px}.bid-price span{font-size:12px;font-weight:500}
+.bid-actions,.bid-decisions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.bid-actions form,.bid-decisions form{margin:0}
+.bid-decisions{border-top:1px solid var(--line);padding-top:16px;margin-top:18px}.bid-actions .btn,.bid-decisions .btn{min-height:44px;white-space:normal;text-align:center}
+.group-overview{grid-template-columns:repeat(2,minmax(0,1fr));padding-top:8px}.public-group-head>.bid-identity{margin:15px 0 22px}.public-group-head h1{margin:0 0 8px}
+.public-member-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px}.public-member-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-width:0;border:1px solid var(--line);border-radius:12px;padding:20px}
+.public-member-card>p,.public-member-card>h3{margin:0;overflow-wrap:anywhere}.public-member-card>.btn{margin-top:auto;white-space:normal}.public-member-card .bid-identity{align-items:flex-start}
+.negotiation-roster{margin:18px 0;padding:12px 16px;background:#f5f7f2;border-radius:10px}.negotiation-roster p{margin:8px 0}
+@media(max-width:750px){.bid-header{flex-direction:column;gap:12px}.bid-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.bid-facts>div:last-child{grid-column:1/-1}.bid-card{padding:18px}.public-member-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:480px){.bid-facts{grid-template-columns:minmax(0,1fr)}.bid-facts .bid-price{overflow-wrap:normal}.bid-actions,.bid-decisions{align-items:stretch;flex-direction:column}.bid-actions>.btn,.bid-actions>form,.bid-decisions>form{width:100%}.bid-actions form .btn,.bid-decisions form .btn{width:100%}.group-overview{grid-template-columns:minmax(0,1fr)}.public-group-head .bid-identity{align-items:flex-start}.public-group-head h1{font-size:30px}}
+

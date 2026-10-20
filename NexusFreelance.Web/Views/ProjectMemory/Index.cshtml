@@ -1,0 +1,79 @@
+﻿@using System.Linq
+@using NexusFreelance.Web.Models
+@model NexusFreelance.Web.Models.ProjectMemory
+@{
+    var project = (Project)ViewBag.Project;
+    var history = ViewBag.History as System.Collections.Generic.List<ProjectMemory> ?? new System.Collections.Generic.List<ProjectMemory>();
+    var isClient = (bool)ViewBag.IsClient;
+    var isLatest = (bool)ViewBag.IsLatest;
+    ViewBag.Title = "Project Memory · " + project.Title;
+}
+<div class="page-head"><span class="eyebrow">PRIVATE PROJECT MEMORY · RULE-BASED DEMO</span><h1>@project.Title</h1>
+    <p class="muted">Tài liệu nội bộ theo quyền của dự án; với hợp đồng hiện hành, nội dung riêng do Client quản lý. Không tự động công bố Portfolio, source code hoặc tệp của Client.</p>
+    <a href="@Url.Action("Details", "Projects", new { id = project.Id })">← Chi tiết dự án</a>
+</div>
+<section class="panel section-small">
+    <div class="heading-row"><h2>Lịch sử tài liệu</h2><span class="pill">@history.Count phiên bản</span></div>
+    @if (!history.Any())
+    {
+        <div class="empty">Chưa có tài liệu tổng kết. Client có thể tạo bản nháp sau nghiệm thu.</div>
+        if (isClient)
+        {
+            using (Html.BeginForm("Generate", "ProjectMemory", new { projectId = project.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-primary">Tạo bản nháp từ dữ liệu dự án</button>
+            }
+        }
+    }
+    else
+    {
+        <div class="toolbar">
+        @foreach (var revision in history)
+        {
+            <a class="btn btn-outline" href="@Url.Action("Index", "ProjectMemory", new { projectId = project.Id, version = revision.Version })">Bản @revision.Version · @revision.CreatedAtUtc.ToString("dd/MM/yyyy")</a>
+        }
+        </div>
+    }
+</section>
+@if (Model != null)
+{
+    <section class="panel section-small">
+        <div class="heading-row"><h2>Phiên bản @Model.Version</h2><span class="pill">@Model.Source</span></div>
+        <p class="muted">Lưu lúc @Model.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") UTC. Nội dung mẫu cần được Client rà soát, đặc biệt Tech Stack và bài học dự án.</p>
+        @if (isClient && isLatest)
+        {
+            <form method="post" action="@Url.Action("Save", "ProjectMemory")" class="memory-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ProjectId" value="@project.Id" />
+                <input type="hidden" name="ExpectedVersion" value="@Model.Version" />
+                <label for="ExecutiveSummary">Executive Summary</label>
+                <textarea id="ExecutiveSummary" name="ExecutiveSummary" rows="5" required maxlength="2000">@Model.ExecutiveSummary</textarea>
+                <label for="TechStack">Tech Stack đã xác nhận</label>
+                <textarea id="TechStack" name="TechStack" rows="2" maxlength="600">@Model.TechStack</textarea>
+                <label for="ChallengesAndSolutions">Challenges &amp; Solutions</label>
+                <textarea id="ChallengesAndSolutions" name="ChallengesAndSolutions" rows="3" maxlength="2000">@Model.ChallengesAndSolutions</textarea>
+                <label for="LessonsLearned">Lessons Learned</label>
+                <textarea id="LessonsLearned" name="LessonsLearned" rows="3" maxlength="2000">@Model.LessonsLearned</textarea>
+                <label for="ReusableAssets">Reusable Assets (chỉ ghi tài sản có quyền sử dụng)</label>
+                <textarea id="ReusableAssets" name="ReusableAssets" rows="3" maxlength="1000">@Model.ReusableAssets</textarea>
+                <label for="PortfolioDraft">Portfolio Draft (chưa được công khai)</label>
+                <textarea id="PortfolioDraft" name="PortfolioDraft" rows="3" maxlength="1500">@Model.PortfolioDraft</textarea>
+                <button type="submit" class="btn btn-primary">Lưu thành phiên bản @((Model.Version + 1)) →</button>
+            </form>
+        }
+        else
+        {
+            <div class="memory-read"><h3>Executive Summary</h3><p>@Model.ExecutiveSummary</p>
+                <h3>Tech Stack</h3><p>@Model.TechStack</p>
+                <h3>Challenges &amp; Solutions</h3><p>@Model.ChallengesAndSolutions</p>
+                <h3>Lessons Learned</h3><p>@Model.LessonsLearned</p>
+                <h3>Reusable Assets</h3><p>@Model.ReusableAssets</p>
+                <h3>Portfolio Draft (nội bộ)</h3><p>@Model.PortfolioDraft</p>
+            </div>
+            if (isClient && !isLatest) { <p class="muted">Đây là phiên bản cũ. Mở bản mới nhất để chỉnh sửa.</p> }
+        }
+    </section>
+}
+
+@if(isClient){<section class="panel section-small"><h2>Chọn kinh nghiệm có thể dùng chung</h2><p>Biên soạn riêng bài học và tiêu chí tổng quát để trợ lý JD tham khảo cho dự án mới.</p><a class="btn btn-primary" href="@Url.Action("Share","Knowledge",new{projectId=project.Id})">Biên soạn bài học chia sẻ</a><a class="btn btn-outline" href="@Url.Action("Completed","Knowledge")">Dự án hoàn thành &amp; tri thức</a></section>}

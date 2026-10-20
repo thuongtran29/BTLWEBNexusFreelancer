@@ -1,0 +1,40 @@
+@model NexusFreelance.Web.ViewModels.ProjectForm
+@{ var isEdit = (string)ViewContext.RouteData.Values["action"] == "Edit"; var editingProject = ViewBag.EditingProject as NexusFreelance.Web.Models.Project; var informationOnly = isEdit && (bool?)ViewBag.InformationOnly == true; ViewBag.Title = isEdit ? "Cập nhật dự án" : "Tạo dự án"; }
+<div class="page-head"><span class="eyebrow">CLIENT STUDIO</span><h1>@ViewBag.Title</h1><p>@(isEdit ? "Cập nhật thông tin rõ ràng cho ứng viên và những người tham gia dự án." : "Hãy mô tả nhu cầu của bạn. Sau khi lưu bản nháp, bạn có thể thêm các vị trí tuyển dụng.")</p></div>
+@if(isEdit) { <section class="panel section-small"><strong>@(informationOnly ? "Cập nhật thông tin chung" : "Thông tin tuyển dụng")</strong><p>@(informationOnly ? "Biểu mẫu này chỉ sửa tên và mô tả dự án. Điều khoản, ngân sách và mốc hợp đồng không thay đổi. Hạn và kỹ năng tuyển dụng có thể điều chỉnh riêng tại trang quản lý khi còn mở tuyển." : "Ứng viên đang chờ và người đã được chọn sẽ nhận thông báo khi nội dung thay đổi. Loại dự án đã công bố được giữ nguyên.")</p><div class="toolbar"><a class="btn btn-outline" href="@Url.Action("Edit", new { id = ViewContext.RouteData.Values["id"] })">Mở lại bản mới nhất</a><a class="btn btn-outline" href="@Url.Action("Manage", new { id = ViewContext.RouteData.Values["id"] })">Về quản lý dự án</a></div></section> }
+@if (!isEdit) { <ol class="creation-steps" aria-label="Quy trình tạo dự án"><li aria-current="step"><span>1</span>Thông tin dự án</li><li><span>2</span>Vị trí tuyển dụng</li><li><span>3</span>Kiểm tra &amp; công bố</li></ol> }
+<div class="project-editor @(isEdit ? "is-edit" : "")">
+<section class="panel form-panel">
+@using (Html.BeginForm(isEdit ? "Edit" : "Create", "Projects", new { id = ViewContext.RouteData.Values["id"] }, FormMethod.Post, null))
+{
+    @Html.AntiForgeryToken() @Html.ValidationSummary(false, "", new { @class = "error-list" })
+    @Html.HiddenFor(m => m.EditVersion)
+    if (!informationOnly) {
+    <label for="Industry">Nhóm ngành nghề</label><select id="Industry" name="Industry">@foreach (var industry in NexusFreelance.Web.Services.IndustryCatalog.All) { <option value="@industry" @(Model.Industry == industry ? "selected" : "")>@industry</option> }</select>
+    }
+    <label for="Title">Tên dự án *</label>@Html.TextBoxFor(m => m.Title, new { required = "required", maxlength = "180", placeholder = "Ví dụ: Ứng dụng giao đồ ăn" }) @Html.ValidationMessageFor(m => m.Title)
+    <label for="Description">Mô tả chi tiết *</label>@Html.TextAreaFor(m => m.Description, new { required = "required", rows = "7", maxlength = "4000", placeholder = "Nêu mục tiêu, phạm vi và sản phẩm bàn giao..." }) @Html.ValidationMessageFor(m => m.Description)
+    if (!informationOnly) {
+    <div class="form-grid"><div>@if(editingProject != null && editingProject.Status != "Draft") { <span class="form-label">Loại dự án</span><p>@NexusFreelance.Web.Services.WorkLabels.ProjectType(editingProject.ProjectType)</p><input type="hidden" name="ProjectType" value="@editingProject.ProjectType" /> } else { <label for="ProjectType">Loại dự án</label><select id="ProjectType" name="ProjectType"><option value="SOLO" @(Model.ProjectType == "SOLO" ? "selected" : "")>Cá nhân thực hiện</option><option value="TEAM" @(Model.ProjectType == "TEAM" ? "selected" : "")>Nhóm thực hiện</option><option value="ENTERPRISE" @(Model.ProjectType == "ENTERPRISE" ? "selected" : "")>Nhận cả cá nhân và nhóm</option></select> }</div>
+    <div><label for="Budget">Ngân sách (VND)</label>@Html.TextBoxFor(m => m.Budget, "{0:0}", new { type = "number", min = "1", step = "1", required = "required" })</div>
+    <div><label for="Deadline">Hạn dự kiến hoàn thành</label>@Html.TextBoxFor(m => m.Deadline, "{0:yyyy-MM-dd}", new { type = "date" })</div></div>
+    <fieldset class="skill-picker"><legend>Core skill cần thiết</legend><p class="form-help">Chọn tối đa 12 kỹ năng để gợi ý ứng viên và nhóm theo bằng chứng năng lực.</p>
+        <div class="skill-options">@foreach(var skill in (System.Collections.Generic.List<NexusFreelance.Web.Models.SkillTrack>)ViewBag.SkillOptions) { <label><input type="checkbox" name="SkillIds" value="@skill.Id" checked="@(Model.SkillIds != null && Model.SkillIds.Contains(skill.Id) ? "checked" : null)" /><span>@skill.Title</span></label> }</div>
+        <label for="MinimumSkillLevel">Mức tối thiểu của các kỹ năng đã chọn</label><select id="MinimumSkillLevel" name="MinimumSkillLevel">@for(var level=1;level<=5;level++) { <option value="@level" selected="@(Model.MinimumSkillLevel == level ? "selected" : null)">@level/5 · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(level)</option> }</select>
+    </fieldset>
+    } else { @Html.Partial("_ProjectLockedFields", editingProject) }
+    if (!isEdit) { <p class="form-help">Bản nháp chỉ hiển thị với bạn. Bạn sẽ kiểm tra các vị trí và yêu cầu trước khi công bố.</p> }
+    <div class="form-actions"><button class="btn btn-primary" type="submit">@(isEdit ? "Lưu cập nhật" : "Lưu bản nháp →")</button>@if(isEdit) { <a class="btn btn-outline" href="@Url.Action("Manage", new { id = ViewContext.RouteData.Values["id"] })">Hủy chỉnh sửa</a> }</div>
+}
+</section>
+
+@if(!isEdit) { <aside class="panel project-assist"><span class="eyebrow">TRỢ LÝ TẠO DỰ ÁN</span><h2>Biến ý tưởng thành yêu cầu rõ ràng</h2><p>AI Job Studio giúp gợi ý phạm vi, kỹ năng, vai trò và các mốc bàn giao. Bạn kiểm tra nội dung trước khi lưu thành dự án.</p><a class="btn btn-outline" href="@Url.Action("New", "JobStudio")">Viết dự án với AI</a><a class="text-link" href="@Url.Action("Index", "JobStudio")">Các ý tưởng đã lưu →</a><hr /><h3>Mô tả tốt cần có gì?</h3><p>Mục tiêu cụ thể, sản phẩm bàn giao, kỹ năng cần thiết và thời hạn dự kiến. Chọn ngân sách phù hợp với toàn bộ phạm vi công việc.</p></aside> }
+</div>
+
+@section scripts {
+<link rel="stylesheet" href="@Url.Content("~/Content/vendor/easymde.min.css")" />
+<link rel="stylesheet" href="@Url.Content("~/Content/editor.css")?v=20261020.1" />
+<script src="@Url.Content("~/Content/vendor/purify.min.js")"></script>
+<script src="@Url.Content("~/Content/vendor/easymde.min.js")"></script>
+<script src="@Url.Content("~/Content/project-editor.js")?v=20261020.1"></script>
+}

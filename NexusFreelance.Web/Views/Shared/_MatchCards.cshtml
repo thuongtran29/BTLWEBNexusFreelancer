@@ -1,0 +1,13 @@
+@model System.Collections.Generic.List<NexusFreelance.Web.ViewModels.MatchCard>
+@if (!Model.Any()) { <p class="empty">Chưa có kết quả đủ cơ sở ghép nối. Hãy bổ sung minh chứng còn hiệu lực, chọn vai trò chính/phụ đã xác minh và cập nhật trạng thái nhận việc; hệ thống sẽ cập nhật gợi ý theo dữ liệu mới.</p> }
+<div class="match-grid">
+@foreach (var card in Model) {
+    <article class="match-card">
+        <div class="heading-row"><h3>@card.Name</h3><span class="match-percent">@card.Score<small>/100</small></span></div>
+        <p class="muted">@card.Subtitle</p>
+        @if(card.Required > 0) { <p><strong>@card.Covered/@card.Required</strong> core skill đạt mức yêu cầu</p> }
+        <details><summary>Cơ sở gợi ý &amp; kỹ năng còn thiếu</summary><ul>@foreach(var reason in card.Reasons) { <li>@reason</li> }</ul></details>
+        <a class="btn btn-outline" href="@(card.Kind == "project" ? Url.Action("Details", "Projects", new { id = card.Id }) : Url.Action(card.Kind == "group" ? "Group" : "Freelancer", "Talent", new { id = card.Id }))">@(card.Kind == "project" ? "Xem dự án & ứng tuyển" : "Xem hồ sơ đầy đủ")</a>
+    </article>
+}
+</div>

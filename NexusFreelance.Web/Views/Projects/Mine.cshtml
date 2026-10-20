@@ -1,0 +1,9 @@
+@model IEnumerable<NexusFreelance.Web.Models.Project>
+@{ ViewBag.Title = "Dự án của tôi"; var updates = (System.Collections.Generic.Dictionary<int,System.Collections.Generic.List<NexusFreelance.Web.Models.UserNotification>>)ViewBag.ProjectUpdates; }
+<div class="heading-row page-head"><div><span class="eyebrow">CHUẨN BỊ &amp; TUYỂN NGƯỜI</span><h1>Dự án &amp; ứng viên</h1><p>Mở từng dự án để thêm vị trí, xem chào giá và chọn người phù hợp.</p></div><div class="toolbar"><a class="btn btn-primary" href="@Url.Action("Create")">+ Tạo dự án</a></div></div>
+<div class="page-explainer"><strong>Bạn cần làm gì?</strong><span>Bản nháp → thêm vị trí rồi công bố</span><span>Đang tuyển → xem và chọn ứng viên</span><span>Đã chọn → xác nhận hợp đồng và ký quỹ</span></div>
+@if (!Model.Any()) { <div class="empty">Bạn chưa tạo dự án. <a href="@Url.Action("Create")">Tạo dự án đầu tiên →</a></div> }
+@foreach (var p in Model)
+{
+    <div class="list-item"><div><span class="pill">@NexusFreelance.Web.Services.ContractPresentation.Status(p.Status)</span> <h3><a href="@Url.Action("Manage", new { id = p.Id })">@p.Title</a></h3><span class="muted">@NexusFreelance.Web.Services.WorkLabels.ProjectType(p.ProjectType) · @p.Budget.ToString("N0") VND</span>@if(updates.ContainsKey(p.Id)) { <div class="project-update"><strong>@updates[p.Id].Count cập nhật chưa đọc</strong>@foreach(var update in updates[p.Id].Take(2)) { <p><a href="@Url.Action("Index", "Notifications")">@update.Title</a> · @(update.Actor == null ? "Hệ thống" : update.Actor.Name)</p> }</div> }</div><a class="btn btn-outline" href="@Url.Action("Manage", new { id = p.Id })">@(p.Status=="Draft"?"Hoàn thiện bản nháp":p.Status=="Published"?"Xem vị trí & ứng viên":"Mở trang quản lý") →</a></div>
+}

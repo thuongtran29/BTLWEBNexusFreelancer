@@ -1,0 +1,72 @@
+@model NexusFreelance.Web.ViewModels.CertificationAdminPage
+@using System
+@using System.Linq
+@using NexusFreelance.Web.Services
+@{ ViewBag.Title = "Duyệt chứng chỉ"; }
+<section class="page-head">
+    <span class="eyebrow">ADMIN · VERIFICATION</span>
+    <h1>Kiểm duyệt chứng chỉ</h1>
+    <p>Kiểm tra bằng chứng trước khi xác minh. Mỗi quyết định đều yêu cầu lý do và được lưu vào nhật ký quản trị.</p>
+</section>
+<nav class="heading-row" aria-label="Lọc trạng thái chứng chỉ">
+    <a href="@Url.Action("Certifications", new { status = "Pending" })">Chờ duyệt</a>
+    <a href="@Url.Action("Certifications", new { status = "Verified" })">Đã duyệt</a>
+    <a href="@Url.Action("Certifications", new { status = "Rejected" })">Đã từ chối</a>
+    <a href="@Url.Action("Certifications", new { status = "All" })">Tất cả</a>
+</nav>
+<section class="panel section-small">
+    <div class="heading-row"><h2>@Model.Status</h2><span class="pill">@Model.Total hồ sơ</span></div>
+    @if (!Model.Certifications.Any()) { <p class="empty">Không có chứng chỉ trong bộ lọc này.</p> }
+    @foreach (var cert in Model.Certifications)
+    {
+        var status = CertificationService.EffectiveStatus(cert, DateTime.Today);
+        <article class="card section-small">
+            <span class="pill">@status</span>
+            <h3>@cert.Name</h3>
+            <p><strong>Freelancer:</strong> <a href="@Url.Action("UserProfile", new { id = cert.UserAccountId })">@cert.User.Name (@cert.User.Email)</a> · <strong>Đơn vị cấp:</strong> @cert.Issuer · #@cert.Id</p>
+            <p>Cấp ngày: @cert.IssuedOn.ToString("dd/MM/yyyy")
+                @if (cert.ExpiresOn.HasValue) { <span> · Hết hạn: @cert.ExpiresOn.Value.ToString("dd/MM/yyyy")</span> }
+            </p>
+            <p>Gửi ngày @DisplayTime.Vietnam(cert.SubmittedAtUtc)
+                @if (ActivityFilters.SafeExternalUrl(cert.EvidenceUrl)) { <span> · <a href="@cert.EvidenceUrl" target="_blank" rel="noopener noreferrer">Mở minh chứng HTTPS ↗</a></span> }
+            </p>
+            @if (cert.Status == "Pending")
+            {
+                using (Html.BeginForm("ReviewCertification", "Admin", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@cert.Id" />
+                    <div class="form-group"><label for="skill-@cert.Id">Kỹ năng được chứng minh</label><select id="skill-@cert.Id" name="SkillTrackId"><option value="">Chọn kỹ năng khi xác minh</option>@foreach(var track in (System.Collections.Generic.List<NexusFreelance.Web.Models.SkillTrack>)ViewBag.TrackOptions) { <option value="@track.Id" selected="@(cert.SkillTrackId == track.Id ? "selected" : null)">@track.Title</option> }</select></div>
+                    <div class="form-group"><label for="level-@cert.Id">Mức thành thạo theo bằng chứng</label><select id="level-@cert.Id" name="ProficiencyLevel">@for(var level=1;level<=5;level++) { <option value="@level">@level/5 · @SmartMatchingService.LevelName(level)</option> }</select><small>Chỉ xác nhận mức được chứng minh; chứng chỉ nhập môn không mặc định mức chuyên sâu.</small></div>
+                    <div class="form-group">
+                        <label for="reason-@cert.Id">Lý do quyết định (tối thiểu 5 ký tự)</label>
+                        <textarea id="reason-@cert.Id" name="Reason" maxlength="500" minlength="5" required="required" rows="2" placeholder="Căn cứ kiểm tra minh chứng..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" type="submit" name="Decision" value="Verified">Xác minh</button>
+                    <button class="btn btn-outline" type="submit" name="Decision" value="Rejected">Từ chối</button>
+                }
+            }
+            else
+            {
+                <p>Lý do: @cert.ReviewReason</p>
+                <p class="muted">Thời điểm duyệt: @(cert.ReviewedAtUtc.HasValue ? DisplayTime.Vietnam(cert.ReviewedAtUtc.Value) : "Chưa ghi nhận")</p>
+                if (cert.ReviewedBy != null) { <p class="muted">Duyệt bởi: <a href="@Url.Action("UserProfile", new { id = cert.ReviewedById })">@cert.ReviewedBy.Email</a></p> }
+                if(cert.Status == "Verified") {
+                    <details><summary>Cập nhật core skill và mức thành thạo</summary>
+                    @using(Html.BeginForm("ClassifyCertification", "Admin", new { id=cert.Id }, FormMethod.Post)) {
+                        @Html.AntiForgeryToken()
+                        <label for="class-skill-@cert.Id">Kỹ năng theo chứng chỉ</label><select id="class-skill-@cert.Id" name="skillId" required>@foreach(var track in (System.Collections.Generic.List<NexusFreelance.Web.Models.SkillTrack>)ViewBag.TrackOptions) { <option value="@track.Id" selected="@(cert.SkillTrackId==track.Id ? "selected" : null)">@track.Title</option> }</select>
+                        <label for="class-level-@cert.Id">Mức thành thạo được chứng minh</label><select id="class-level-@cert.Id" name="level">@for(var level=1;level<=5;level++) { <option value="@level" selected="@((cert.ProficiencyLevel ?? 1)==level ? "selected" : null)">@level/5 · @SmartMatchingService.LevelName(level)</option> }</select>
+                        <label for="class-reason-@cert.Id">Căn cứ phân loại</label><input id="class-reason-@cert.Id" name="reason" minlength="5" maxlength="300" required /><button class="btn btn-outline" type="submit">Lưu phân loại &amp; ghi nhật ký</button>
+                    }
+                    </details>
+                }
+            }
+        </article>
+    }
+    <nav class="heading-row" aria-label="Phân trang">
+        @if (Model.Page > 1) { <a href="@Url.Action("Certifications", new { status = Model.Status, page = Model.Page - 1 })">← Trang trước</a> }
+        <span>Trang @Model.Page/@Model.PageCount</span>
+        @if (Model.Page < Model.PageCount) { <a href="@Url.Action("Certifications", new { status = Model.Status, page = Model.Page + 1 })">Trang sau →</a> }
+    </nav>
+</section>

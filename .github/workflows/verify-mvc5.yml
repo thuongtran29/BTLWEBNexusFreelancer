@@ -1,0 +1,35 @@
+name: Verify MVC5
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore PackageReferences and build .NET Framework 4.8
+        run: msbuild NexusFreelance.sln /restore /t:Build /p:Configuration=Release /m:1 /nologo /v:minimal
+
+      - name: Validate Python regression scripts
+        run: python -m compileall -q tools
+
+      - name: Check AI consent and fake provider without network
+        shell: powershell
+        run: |
+          & .\tools\TestJobStudioAiConsent.ps1
+          & .\tools\TestJobStudioAiProvider.ps1
+          & .\tools\TestAuthentication.ps1
+
+      # SQL/HTTP E2E suites require an isolated SQL Server Express database and
+      # local IIS Express configuration; they are run on the development host.

@@ -1,0 +1,26 @@
+@model NexusFreelance.Web.Models.SkillExamAttempt
+@{ ViewBag.Title = "Kết quả bài thi"; }
+<div class="page-head"><span class="eyebrow">EXAM RESULT</span><h1>Kết quả kiểm tra</h1>
+    <p>@Model.SkillTrack.Title · Nộp bài: @NexusFreelance.Web.Services.DisplayTime.Vietnam(Model.SubmittedAtUtc)</p>
+</div>
+<section class="panel form-panel section-small">
+    <span class="pill">@(Model.Passed ? "ĐẠT" : "CHƯA ĐẠT")</span>
+    <h2>@((Model.QuestionCount > 0 ? 100m * Model.CorrectCount / Model.QuestionCount : 0m).ToString("0.##"))% · @Model.CorrectCount/@Model.QuestionCount câu đúng</h2>
+    @if (Model.DurationSeconds.HasValue)
+    {
+        <p class="muted">Thời gian làm bài: @(Model.DurationSeconds.Value / 60) phút @(Model.DurationSeconds.Value % 60) giây.
+            Số lần rời tab được trình duyệt ghi nhận: @Model.BrowserFocusLossCount (chỉ mang tính tham khảo).</p>
+    }
+    @if (Model.Passed)
+    {
+        <p>Bạn đã nhận chứng chỉ nội bộ theo quy định tại thời điểm chấm bài. Lượt thi mới yêu cầu trên 80% số câu đúng.</p>
+    }
+    else
+    {
+        <p>Bạn cần đạt trên 80% để nhận Badge. Bạn có thể làm lại nếu còn lượt thi.</p>
+    }
+    <p class="muted">Badge chỉ xác nhận kết quả bài kiểm tra nhập môn trong NexusFreelance; không tương đương chứng chỉ bên ngoài.</p>
+    <div class="toolbar"><a class="btn btn-primary" href="@Url.Action("Index", "Skills")">Trung tâm kỹ năng</a>
+        @if (!Model.Passed) { <a class="btn btn-outline" href="@Url.Action("Exam", "Skills", new { id = Model.SkillTrackId })">Làm bài lại</a> }
+    </div>
+</section>

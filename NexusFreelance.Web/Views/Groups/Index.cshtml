@@ -1,0 +1,48 @@
+@model NexusFreelance.Web.ViewModels.GroupIndexPage
+@using System.Linq
+@{ ViewBag.Title = "Nhóm Freelancer"; }
+<div class="page-head"><span class="eyebrow">FREELANCER GROUPS</span><h1>Nhóm Freelancer</h1>
+    <p>Tạo nhóm chuyên môn, mời thành viên Freelancer đã đăng ký và quản lý danh sách tham gia.</p>
+</div>
+<section class="panel section-small">
+    <h2>Lời mời của bạn (@Model.Invitations.Count)</h2>
+    @if (!Model.Invitations.Any()) { <p class="muted">Chưa có lời mời đang chờ.</p> }
+    @foreach (var invite in Model.Invitations)
+    {
+        <div class="list-item"><div><strong>@invite.Group.Name</strong><p>Leader: @invite.Group.Leader.Name</p></div>
+            <div class="toolbar">
+                @using (Html.BeginForm("Respond", "Groups", new { id = invite.FreelancerGroupId, accept = true }, FormMethod.Post, new { @class = "inline" }))
+                { @Html.AntiForgeryToken()<button type="submit" class="btn btn-primary">Tham gia</button> }
+                @using (Html.BeginForm("Respond", "Groups", new { id = invite.FreelancerGroupId, accept = false }, FormMethod.Post, new { @class = "inline" }))
+                { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Từ chối</button> }
+            </div>
+        </div>
+    }
+</section>
+<section class="panel section-small">
+    <h2>Nhóm của tôi (@Model.Memberships.Count)</h2>
+    @if (!Model.Memberships.Any()) { <p class="muted">Bạn chưa tham gia nhóm nào.</p> }
+    @foreach (var member in Model.Memberships)
+    {
+        <div class="list-item"><div><strong>@member.Group.Name</strong><p>@member.Group.Description</p>
+            <small>Leader: @member.Group.Leader.Name</small></div>
+            <a class="btn btn-outline" href="@Url.Action("Details", new { id = member.FreelancerGroupId })">Quản lý →</a>
+        </div>
+    }
+</section>
+<section class="panel section-small"><span class="eyebrow">THIẾT LẬP NHÓM</span><h2>Tạo nhóm chuyên môn</h2><p>Người tạo làm đại diện trao đổi với khách hàng, nộp chào giá và phân công trong workspace. Thành viên chỉ tham gia sau khi chấp nhận lời mời.</p>
+    @using (Html.BeginForm("Create", "Groups", FormMethod.Post, new { @class = "form-grid" }))
+    {
+        @Html.AntiForgeryToken()
+        <div><label for="Name">Tên nhóm</label><input name="Name" id="Name" maxlength="120" required /></div>
+        <div><label for="Description">Mô tả chuyên môn</label><textarea name="Description" id="Description" maxlength="1000" required></textarea></div>
+        <div><label for="IsPublic">Hiển thị nhóm trong danh bạ</label><select id="IsPublic" name="IsPublic"><option value="true">Công khai</option><option value="false">Riêng tư</option></select></div>
+        <div><label for="GroupIndustry">Ngành chuyên môn</label><select id="GroupIndustry" name="Industry">@foreach(var industry in NexusFreelance.Web.Services.IndustryCatalog.All) { <option value="@industry">@industry</option> }</select></div>
+        <div><label for="GroupWorkStyle">Hình thức làm việc</label><select id="GroupWorkStyle" name="WorkStyle"><option value="Remote">Từ xa</option><option value="Hybrid">Kết hợp</option><option value="Onsite">Trực tiếp</option></select></div>
+        <div><label for="TargetSize">Quy mô mục tiêu (1–50 người)</label><input id="TargetSize" name="TargetSize" type="number" min="1" max="50" value="5" required /></div>
+        <div><label for="MinimumBudget">Ngân sách dự án tối thiểu (VND)</label><input id="MinimumBudget" name="MinimumBudget" type="number" min="0" max="999999999999" step="1" value="0" /></div>
+        <div><label for="Specialties">Dịch vụ và thế mạnh của nhóm</label><textarea id="Specialties" name="Specialties" maxlength="300" placeholder="Thiết kế UX, phát triển website, kiểm thử và triển khai..."></textarea><small>Kỹ năng được xác minh để ghép dự án lấy từ chứng chỉ của thành viên, không lấy từ nội dung tự giới thiệu này.</small></div>
+        <div><label for="Collaboration">Cách phối hợp và thời gian liên hệ</label><textarea id="Collaboration" name="Collaboration" maxlength="300" placeholder="Họp tuần, cập nhật tiến độ mỗi ngày, giờ liên hệ 9–18h UTC+7..."></textarea></div>
+        <button class="btn btn-primary" type="submit">Tạo nhóm &amp; mời thành viên</button>
+    }
+</section>

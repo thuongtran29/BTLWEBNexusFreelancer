@@ -1,0 +1,22 @@
+@using NexusFreelance.Web.Models
+@using NexusFreelance.Web.Services
+@{ ViewBag.Title = "Đối soát & khiếu nại ký quỹ"; var requests = (List<MoneyRequest>)ViewBag.Requests; var disputes = (List<EscrowDispute>)ViewBag.Disputes; }
+<style>
+    .wallet-admin-form { display:grid; gap:.75rem; margin-top:1.25rem; }
+    .wallet-admin-form .form-actions { display:flex; flex-wrap:wrap; gap:.75rem; margin:0; }
+    .wallet-admin-request p,.wallet-admin-request code { overflow-wrap:anywhere; }
+    .wallet-admin-reminder { margin-bottom:1.5rem; }
+</style>
+<div class="page-head"><h1>Đối soát ví &amp; ký quỹ</h1><p>Xem tối đa 100 yêu cầu chờ. Chỉ duyệt khi đã đối chiếu giao dịch ngân hàng thực tế; số dư thay đổi ngay khi xác nhận.</p></div>
+<div class="wallet-admin-reminder">@using (Html.BeginForm("ProcessDue", "Wallet", FormMethod.Post)) { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Gửi nhắc nghiệm thu mốc quá 7 ngày</button> }<p class="muted">Nhắc khách hàng và chuyển quản trị hỗ trợ; không tự nghiệm thu hoặc giải ngân.</p></div>
+@if (!requests.Any()) { <div class="empty">Không có yêu cầu nạp / rút đang chờ.</div> }
+@foreach (var r in requests) { <section class="panel section-small wallet-admin-request"><h2>#@r.Id · @(r.Kind == "Deposit" ? "Nạp tiền" : "Rút tiền") · @r.Amount.ToString("N0") VND</h2><p>@r.User.Name · @(r.User.Role == "Client" ? "Khách hàng" : r.User.Role == "Freelancer" ? "Freelancer" : "Quản trị viên")</p><p class="form-help">Gửi yêu cầu: @DisplayTime.Vietnam(r.CreatedAtUtc)</p><a class="btn btn-outline" href="@Url.Action("UserProfile", "Admin", new { id=r.UserAccountId })">Xem hồ sơ tài khoản</a><p>Nội dung / mã tham chiếu: <code>@r.Reference</code></p><p>@(string.IsNullOrWhiteSpace(r.Details) || r.Details == "none" ? "Chưa có ghi chú bổ sung" : r.Details)</p>
+@if(WalletBankTransferService.IsBankTopup(r)) { <p class="alert info">Lệnh này được tạo khi mở QR, chưa có xác nhận đã chuyển tiền. Đối chiếu số tiền thực nhận tại @WalletBankTransferService.BankName, tài khoản @WalletBankTransferService.AccountNumber và đúng nội dung <strong>@r.Reference</strong> trước khi duyệt. Ghi mã giao dịch ngân hàng vào chứng từ.</p> }
+@using (Html.BeginForm("ReviewMoney", "Wallet", new { id = r.Id }, FormMethod.Post, new { @class = "wallet-admin-form", data_confirm = "Xác nhận kết quả đối soát? Chỉ duyệt khi đã kiểm tra chứng từ ngân hàng thực tế. Giao dịch được ghi sổ ngay khi duyệt." })) {
+    @Html.AntiForgeryToken()
+    <div><label for="reason-@r.Id">Chứng từ ngân hàng / lý do</label><input id="reason-@r.Id" name="reason" minlength="5" maxlength="300" required /></div>
+    <div class="form-actions"><button class="btn btn-primary" name="approve" value="true" type="submit">@(r.Kind == "Deposit" ? "Xác nhận đã nhận tiền" : "Xác nhận đã chi tiền")</button><button class="btn btn-outline" name="approve" value="false" type="submit">Từ chối yêu cầu</button></div>
+}</section> }
+<h2>Khiếu nại ký quỹ</h2>@if (!disputes.Any()) { <p class="empty">Không có khiếu nại đang chờ.</p> }
+@foreach (var d in disputes) { <section class="panel section-small"><h3>#@d.Id · @d.Project.Title</h3><p>@d.Reason</p><a class="btn btn-primary" href="@Url.Action("ReviewDispute", new { id = d.Id })">Mở hồ sơ · bằng chứng &amp; quyết định</a>
+@using (Html.BeginForm("Resolve", "Wallet", new { id = d.Id }, FormMethod.Post, new { @class = "wallet-admin-form", data_confirm = "Chốt quyết định và quyết toán các mốc đang giữ?" })) { @Html.AntiForgeryToken()<div><label for="refund-@d.Id">Tổng hoàn về khách hàng (VND), phần còn lại giải ngân sau phí</label><input id="refund-@d.Id" name="refund" type="number" min="0" step="1" required /></div><div><label for="resolution-@d.Id">Kết luận / bằng chứng (15–1000 ký tự)</label><textarea id="resolution-@d.Id" name="reason" minlength="15" maxlength="1000" required></textarea></div><div class="form-actions"><button class="btn btn-primary" type="submit">Chốt xử lý</button></div> }</section> }

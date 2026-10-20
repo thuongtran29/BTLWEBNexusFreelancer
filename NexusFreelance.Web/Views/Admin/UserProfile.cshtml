@@ -1,0 +1,99 @@
+@model NexusFreelance.Web.ViewModels.AdminProfilePage
+@using NexusFreelance.Web.Services
+@using NexusFreelance.Web.ViewModels
+@{
+    ViewBag.Title = "Kiểm tra hồ sơ · " + Model.User.Name;
+    var labels = new System.Collections.Generic.Dictionary<string, string> {
+        { "CertificateSubmitted", "Gửi chứng chỉ" }, { "CertificateReviewRecorded", "Ghi nhận duyệt chứng chỉ" },
+        { "ExamStarted", "Bắt đầu bài thi đã nộp" }, { "ExamSubmitted", "Nộp bài thi" },
+        { "BadgeIssued", "Cấp Badge nội bộ" }, { "BadgeRevoked", "Thu hồi Badge" },
+        { "ProjectCreated", "Tạo bài đăng dự án" }, { "ProposalCreated", "Gửi đề xuất" },
+        { "PortfolioCreated", "Thêm sản phẩm portfolio" }, { "ModerationRecorded", "Kiểm duyệt liên quan" },
+        { "ProjectActivityRecorded", "Hoạt động dự án đã ghi nhận" },
+        { "ProjectReportSubmitted", "Gửi báo cáo dự án" }, { "ProjectReportReviewRecorded", "Ghi nhận xử lý báo cáo dự án" }
+    };
+}
+<section class="page-header">
+    @Html.Partial("_Avatar", new AvatarView { Id = Model.User.Id, Name = Model.User.Name, Size = "large" })
+    <h1>@Model.User.Name</h1><p>@Model.User.Role · #@Model.User.Id · @Model.User.Email</p>
+    <span class="status-badge @(Model.User.IsSuspended ? "is-danger" : "")">@(Model.User.IsSuspended ? "Tài khoản đang khóa" : "Tài khoản hoạt động")</span>
+    <p>Kiểm tra chỉ đọc để hỗ trợ và xử lý sự cố. Hồ sơ ẩn hoặc tài khoản bị khóa vẫn được hiển thị cho quản trị viên.</p>
+</section>
+<nav class="action-group" aria-label="Tra cứu tài khoản">
+    <a class="btn btn-outline" href="@Url.Action("Users")">Danh sách tài khoản</a>
+    <a class="btn btn-outline" href="@Url.Action("Audit", new { userId = Model.User.Id })">Nhật ký kiểm duyệt liên quan</a>
+    <a class="btn btn-outline" href="@Url.Action("Activity", new { userId = Model.User.Id })">Lượt truy cập chức năng</a>
+</nav>
+<section class="panel"><h2>Thông tin hồ sơ</h2><dl>
+    <dt>Tham gia (UTC+7)</dt><dd>@DisplayTime.Vietnam(Model.User.JoinedAtUtc)</dd>
+    @if (Model.UpdatedAtUtc.HasValue) {
+        <dt>Cập nhật hồ sơ gần nhất (UTC+7)</dt><dd>@DisplayTime.Vietnam(Model.UpdatedAtUtc.Value)</dd>
+    }
+    @if (Model.User.Role == "Freelancer") {
+        <dt>Hiển thị trong danh bạ</dt><dd>@(Model.IsPublic.HasValue ? (Model.IsPublic.Value ? "Công khai" : "Đã ẩn") : "Chưa có hồ sơ Freelancer")</dd>
+        <dt>Vai trò chuyên môn</dt><dd>@(Model.CoreRole ?? "Chưa cung cấp")</dd>
+        <dt>Lĩnh vực</dt><dd>@(Model.Industry ?? "Chưa cung cấp")</dd>
+        <dt>Kinh nghiệm</dt><dd>@(Model.YearsExperience.HasValue ? Model.YearsExperience + " năm" : "Chưa cung cấp")</dd>
+        <dt>Ngân sách dự án tối thiểu</dt><dd>@(Model.MinimumProjectBudget.HasValue ? Model.MinimumProjectBudget.Value.ToString("N0") + " VNĐ" : "Chưa cung cấp")</dd>
+        <dt>Nhận việc</dt><dd>@(Model.IsAvailable.HasValue ? (Model.IsAvailable.Value ? "Sẵn sàng" : "Chưa sẵn sàng") : "Chưa cung cấp")</dd>
+    }
+    @if (Model.User.Role == "Client") {
+        <dt>Loại khách hàng</dt><dd>@(Model.ClientType ?? "Chưa có hồ sơ khách hàng")</dd>
+        <dt>Công ty</dt><dd>@(Model.CompanyName ?? "Chưa cung cấp")</dd>
+        <dt>Website</dt><dd>@if (ActivityFilters.SafeExternalUrl(Model.Website)) { <a href="@Model.Website" target="_blank" rel="noopener noreferrer">@Model.Website ↗</a> } else { <span>@(Model.Website ?? "Chưa cung cấp")</span> }</dd>
+    }
+    @if (Model.User.Role == "Client" || Model.User.Role == "Freelancer") {
+        <dt>Địa điểm</dt><dd>@(Model.Location ?? "Chưa cung cấp")</dd>
+        <dt>Giới thiệu</dt><dd class="description">@(Model.Bio ?? "Chưa cung cấp")</dd>
+    }
+</dl></section>
+@if (Model.User.Role == "Freelancer") {
+    <section class="panel"><h2>Năng lực đã xác minh</h2><p>@(String.IsNullOrWhiteSpace(Model.SelectedRoles) ? "Chưa chọn vai trò có xác minh còn hiệu lực" : Model.SelectedRoles)</p>
+        <p class="muted">Tối đa 60 kỹ năng theo bằng chứng hiện còn hiệu lực, dùng cùng cách đánh giá với hồ sơ công khai.</p>
+        @if (Model.VerifiedSkills.Count == 0) { <p>Chưa có kỹ năng có bằng chứng còn hiệu lực.</p> }
+        @foreach (var skill in Model.VerifiedSkills) { <div class="list-item"><strong>@skill.Title · @skill.Level/5</strong><span>@skill.Evidence</span></div> }
+    </section>
+}
+@if (Model.User.Role == "Client" || Model.User.Role == "Freelancer") {
+    <section class="panel"><h2>Đánh giá nhận được</h2><p class="muted">Tối đa 20 đánh giá mới nhất.</p>
+        @if (Model.Reviews.Count == 0) { <p>Chưa có đánh giá sau dự án.</p> }
+        @foreach (var review in Model.Reviews) { <article class="card"><h3>@review.Project · @review.Rating/5</h3><p class="description">@review.Comment</p><p><a href="@Url.Action("UserProfile", new { id = review.ReviewerId })">@review.Reviewer</a> · @DisplayTime.Vietnam(review.CreatedAtUtc) · #@review.Id</p></article> }
+    </section>
+}
+@if (Model.User.Role == "Freelancer" || Model.Portfolio.Count > 0) {
+    <section class="panel"><h2>Portfolio</h2><p class="muted">Tối đa 20 sản phẩm mới nhất. Nội dung do người dùng khai báo.</p>
+        @if (Model.Portfolio.Count == 0) { <p>Chưa có sản phẩm portfolio.</p> }
+        @foreach (var item in Model.Portfolio) {
+            <article class="card"><h3>@item.Title · #@item.Id</h3><p class="description">@item.Summary</p>
+                <dl><dt>Vai trò</dt><dd>@item.Role</dd><dt>Kỹ năng</dt><dd>@item.Skills</dd><dt>Kết quả</dt><dd>@item.Outcome</dd></dl>
+                <p>Thêm lúc @DisplayTime.Vietnam(item.CreatedAtUtc)</p>
+                @if (ActivityFilters.SafeExternalUrl(item.Url)) { <a href="@item.Url" target="_blank" rel="noopener noreferrer">Mở sản phẩm ↗</a> }
+            </article>
+        }
+    </section>
+}
+@if (Model.User.Role == "Freelancer" || Model.Certificates.Count > 0) {
+    <section class="panel"><h2>Chứng chỉ đã khai báo</h2><p class="muted">Tối đa 20 chứng chỉ gửi gần nhất. Ngày cấp là ngày do người dùng khai báo, khác với thời điểm gửi và duyệt trong hệ thống.</p>
+        @if (Model.Certificates.Count == 0) { <p>Chưa có chứng chỉ.</p> }
+        @foreach (var cert in Model.Certificates) {
+            <article class="card"><h3>@cert.Name · #@cert.Id</h3><p>@cert.Issuer · @cert.Status</p><dl>
+                <dt>Ngày cấp được khai báo</dt><dd>@cert.IssuedOn.ToString("dd/MM/yyyy")</dd>
+                <dt>Ngày hết hạn</dt><dd>@(cert.ExpiresOn.HasValue ? cert.ExpiresOn.Value.ToString("dd/MM/yyyy") : "Không khai báo")</dd>
+                <dt>Gửi lúc (UTC+7)</dt><dd>@DisplayTime.Vietnam(cert.SubmittedAtUtc)</dd>
+                <dt>Duyệt lúc (UTC+7)</dt><dd>@(cert.ReviewedAtUtc.HasValue ? DisplayTime.Vietnam(cert.ReviewedAtUtc.Value) : "Chưa ghi nhận")</dd>
+                <dt>Lý do duyệt</dt><dd>@(cert.ReviewReason ?? "Chưa ghi nhận")</dd>
+                @if (cert.ReviewerId.HasValue) { <dt>Người duyệt</dt><dd><a href="@Url.Action("UserProfile", new { id = cert.ReviewerId })">Hồ sơ #@cert.ReviewerId</a></dd> }
+            </dl></article>
+        }
+    </section>
+}
+<section class="panel"><h2>Sự kiện gần đây</h2><p class="muted">Tối đa 60 sự kiện mới nhất từ dữ liệu còn lưu. Danh sách không phải toàn bộ lịch sử và không suy đoán các lần thay đổi chưa ghi nhận. Mã # là mã bản ghi nguồn của từng loại sự kiện. Thời gian hiển thị UTC+7.</p>
+    @if (Model.Events.Count == 0) { <p>Chưa có sự kiện phù hợp được ghi nhận.</p> }
+    @foreach (var item in Model.Events) {
+        <article class="report-row"><h3>@(labels.ContainsKey(item.Type) ? labels[item.Type] : item.Type) · #@item.Id</h3>
+            <p><time datetime="@item.AtUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")">@DisplayTime.Vietnam(item.AtUtc)</time> · <small>@item.Type</small></p>
+            <p class="description">@item.Summary</p>
+            @if (item.Type == "ModerationRecorded") { <a href="@Url.Action("AuditDetails", new { id = item.Id })">Chi tiết người thực hiện và đối tượng →</a> }
+        </article>
+    }
+</section>

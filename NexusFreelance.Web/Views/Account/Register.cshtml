@@ -1,0 +1,15 @@
+@model NexusFreelance.Web.ViewModels.RegisterForm
+@{ ViewBag.Title = "Tạo tài khoản"; }
+@Html.Partial("_MailDeliveryNotice")
+<div class="auth-panel panel"><span class="eyebrow">JOIN NEXUS</span><h1>Tạo tài khoản</h1><p class="muted">Kết nối với khách hàng và những chuyên gia cùng chí hướng.</p>
+@using (Html.BeginForm("Register", "Account", FormMethod.Post))
+{
+    @Html.AntiForgeryToken() @Html.ValidationSummary(false, "", new { @class = "error-list" })
+    <label for="Name">Tên hiển thị</label>@Html.TextBoxFor(m => m.Name, new { required = "required", maxlength = "120", placeholder = "Nguyễn Văn A" }) @Html.ValidationMessageFor(m => m.Name)
+    <label for="Email">Email</label>@Html.TextBoxFor(m => m.Email, new { type = "email", required = "required", maxlength = "200", placeholder = "email@example.com" }) @Html.ValidationMessageFor(m => m.Email)
+    <label for="Password">Mật khẩu (tối thiểu 12 ký tự)</label>@Html.PasswordFor(m => m.Password, new { required = "required", minlength = "12", maxlength = "128", autocomplete = "new-password" }) @Html.ValidationMessageFor(m => m.Password)
+    <p class="muted">Mật khẩu 12–128 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt. Không dùng mật khẩu phổ biến.</p>
+    <label for="Role">Tôi tham gia với vai trò</label><select name="Role" id="Role" required><option value="Client" @(Model.Role == "Client" ? "selected" : "")>Client · Tôi cần tuyển đội nhóm</option><option value="Freelancer" @(Model.Role == "Freelancer" ? "selected" : "")>Freelancer · Tôi tìm dự án</option></select> @Html.ValidationMessageFor(m => m.Role)
+    <button class="btn btn-primary full" type="submit">Đăng ký →</button>
+}
+<p class="muted">Đã có tài khoản? <a href="@Url.Action("Login")">Đăng nhập</a></p></div>

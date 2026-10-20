@@ -1,0 +1,63 @@
+@model NexusFreelance.Web.ViewModels.SkillCenterPage
+@using System.Linq
+@{ ViewBag.Title = "Trung tâm kỹ năng"; }
+<div class="page-head"><span class="eyebrow">SKILL VERIFICATION</span><h1>Kiểm tra kỹ năng</h1>
+    <p>Đánh giá kiến thức nhập môn qua bài thi nội bộ. Badge được cấp sau khi đạt trên 80%, không phải chứng chỉ độc lập.</p>
+</div>
+<section class="panel section-small"><div class="heading-row"><div><h2>Đánh giá từ đơn vị chuyên môn</h2><p>Microsoft Learn, AWS, Scrum.org và HubSpot Academy. Xem nguồn chính thức theo lĩnh vực và gửi chứng chỉ đã được cấp.</p></div><a class="btn btn-primary" href="@Url.Action("Index", "Assessments")">Khám phá nguồn đánh giá →</a></div></section>
+<section class="section-small">
+    <div class="heading-row"><h2>Chọn bài kiểm tra</h2><span class="pill">@Model.Tracks.Count lĩnh vực</span></div>
+    @if (!Model.Tracks.Any()) { <div class="empty">Chưa có bài kiểm tra. Quản trị cần khởi tạo dữ liệu bài thi.</div> }
+    <div class="grid">
+    @foreach (var track in Model.Tracks)
+    {
+        var badge = Model.Badges.FirstOrDefault(b => b.SkillTrackId == track.Id);
+        <article class="card">
+            <span class="pill">@(badge == null ? "BÀI THI NỘI BỘ" : "BADGE " + badge.Tier.ToUpperInvariant())</span>
+            <h3>@track.Title</h3><p>@track.Description</p>
+            <div class="card-bottom">
+                <span>Đạt trên 80% · 3 lượt/24 giờ</span>
+                <a href="@Url.Action("Exam", "Skills", new { id = track.Id })">@(badge == null ? "Mở bài thi →" : "Xem Badge →")</a>
+            </div>
+        </article>
+    }
+    </div>
+</section>
+@if (Model.RevokedBadges.Any())
+{
+    <section class="panel section-small" aria-label="Badge đã thu hồi">
+        <div class="heading-row"><h2>Badge đã thu hồi</h2><span class="pill">@Model.RevokedBadges.Count</span></div>
+        @foreach (var badge in Model.RevokedBadges)
+        {
+            <div class="list-item">
+                <div>
+                    <strong>@badge.SkillTrack.Title</strong>
+                    <p class="muted">Thu hồi ngày @badge.RevokedAtUtc.Value.ToString("dd/MM/yyyy") (UTC). Lý do: @badge.RevocationReason</p>
+                    <p class="muted">Badge này không còn tính điểm Matching. Bạn có thể thi lại khi còn lượt.</p>
+                </div>
+                <a href="@Url.Action("Exam", "Skills", new { id = badge.SkillTrackId })">Thi lại →</a>
+            </div>
+        }
+    </section>
+}
+<section class="panel section-small">
+    <div class="heading-row"><h2>Badge đã đạt</h2><span class="pill">@Model.Badges.Count</span></div>
+    @if (!Model.Badges.Any()) { <p class="muted">Bạn chưa có Badge nội bộ.</p> }
+    @foreach (var badge in Model.Badges)
+    {
+        <div class="list-item"><div><strong>✓ @badge.SkillTrack.Title · @badge.Tier</strong><p class="muted">Cấp chứng chỉ: @NexusFreelance.Web.Services.DisplayTime.Vietnam(badge.IssuedAtUtc)</p></div>
+            <a href="@Url.Action("Result", "Skills", new { id = badge.EvidenceAttemptId })">Xem kết quả</a>
+        </div>
+    }
+</section>
+<section class="panel section-small">
+    <h2>Lịch sử làm bài</h2>
+    @if (!Model.RecentAttempts.Any()) { <p class="muted">Chưa có lần thi nào.</p> }
+    @foreach (var attempt in Model.RecentAttempts)
+    {
+        <div class="list-item"><div><strong>@attempt.SkillTrack.Title</strong>
+            <p>@attempt.CorrectCount/@attempt.QuestionCount câu đúng · @attempt.Percent% · @(attempt.Passed ? "Đạt" : "Chưa đạt")</p><p class="muted">Nộp bài: @NexusFreelance.Web.Services.DisplayTime.Vietnam(attempt.SubmittedAtUtc)</p></div>
+            <a href="@Url.Action("Result", "Skills", new { id = attempt.Id })">Xem lần thi</a>
+        </div>
+    }
+</section>

@@ -1,0 +1,34 @@
+@using NexusFreelance.Web.Models
+@{ ViewBag.Title="Xác minh kỹ năng";var claims=(List<SkillClaim>)ViewBag.Claims;var requests=(List<SkillEvidenceRequest>)ViewBag.Requests;var attempts=(List<SkillExamAttempt>)ViewBag.Attempts;var portfolio=(List<PortfolioItem>)ViewBag.Portfolio; }
+<div class="page-head"><span class="eyebrow">HỒ SƠ &amp; NĂNG LỰC</span><h1>Xác minh kỹ năng</h1><p>Khai báo điều bạn có thể làm, rồi chọn bằng chứng để quản trị xem xét. Kỹ năng tự khai và kỹ năng đã được xác minh được hiển thị riêng.</p></div>
+<div class="page-explainer"><strong>Hai bước rõ ràng</strong><span>1. Khai báo kỹ năng</span><span>2. Chọn bằng chứng và gửi xét duyệt</span><a href="@Url.Action("Certifications","Skills")">Tôi muốn thêm chứng chỉ đã có →</a></div>
+<section class="panel section-small" id="declare-skill"><h2>1. Khai báo kỹ năng</h2><p class="section-intro">Chọn kỹ năng, mức độ tự đánh giá và thời gian bạn đã sử dụng trong thực tế.</p>
+@using(Html.BeginForm("SaveClaim","SkillEvidence",FormMethod.Post,new{@class="form-grid"})){
+    @Html.AntiForgeryToken()
+    <div><label for="skillId">Kỹ năng</label><select id="skillId" name="skillId" required>@foreach(var group in ((List<SkillTrack>)ViewBag.Tracks).GroupBy(s=>NexusFreelance.Web.Services.IndustryCatalog.Normalize(s.Industry)).OrderBy(g=>g.Key)){<optgroup label="@group.Key">@foreach(var s in group){<option value="@s.Id">@s.Title</option>}</optgroup>}</select></div>
+    <div><label for="level">Mức độ của bạn</label><select id="level" name="level"><option value="1">1 · Biết kiến thức cơ bản</option><option value="2">2 · Làm được khi có hướng dẫn</option><option value="3" selected>3 · Tự thực hiện công việc</option><option value="4">4 · Xử lý công việc phức tạp</option><option value="5">5 · Hướng dẫn và dẫn dắt chuyên môn</option></select></div>
+    <div><label for="years">Số năm đã sử dụng</label><input id="years" name="years" type="number" min="0" max="60" value="0" required /></div><button class="btn btn-primary" type="submit">Lưu kỹ năng vào hồ sơ</button>
+}</section>
+<section class="panel section-small"><h2>Kỹ năng đã khai báo (@claims.Count)</h2>
+@if(!claims.Any()){<p class="empty">Bạn chưa khai báo kỹ năng. Hoàn thành bước 1 để bắt đầu chọn minh chứng.</p>}
+@foreach(var c in claims){var verified=((List<int>)ViewBag.VerifiedIds).Contains(c.Id);<div class="list-item"><div><strong>@c.Skill.Title</strong><p>Mức tự đánh giá @c.Level/5 · @c.YearsExperience năm</p><span class="pill">@(verified?"Đã được xác minh":"Tự khai, chưa xác minh")</span></div>@using(Html.BeginForm("DeleteClaim","SkillEvidence",new{id=c.Id},FormMethod.Post,new{data_confirm="Xóa kỹ năng sẽ hủy yêu cầu chờ và xác minh đang hiển thị. Tiếp tục?"})){@Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Xóa khỏi hồ sơ</button>}</div>}
+</section>
+<section class="panel section-small"><h2>2. Chọn bằng chứng</h2><p class="section-intro">Chọn một kỹ năng đã khai báo và thêm từ 1 đến 3 bằng chứng. Mỗi kỹ năng có một yêu cầu chờ duyệt; nếu bị từ chối, thời gian chờ nộp lại thường là 3 ngày theo cấu hình.</p>
+@if(!claims.Any()) { <div class="empty"><strong>Bạn cần thêm kỹ năng trước</strong><p>Sau khi lưu kỹ năng ở bước 1, bạn có thể chọn chứng chỉ, bài thi đạt hoặc sản phẩm đã làm.</p><a href="#declare-skill">Đến bước khai báo kỹ năng →</a></div> }
+else {
+    using(Html.BeginForm("Submit","SkillEvidence",FormMethod.Post,new{data_evidence_form="true"})) {
+    @Html.AntiForgeryToken()<label for="claimId">Kỹ năng cần xác minh</label><select id="claimId" name="claimId" required>@foreach(var c in claims){<option value="@c.Id" data-skill-id="@c.SkillTrackId">@c.Skill.Title</option>}</select>
+    for(var i=0;i<3;i++) {
+        <fieldset class="evidence-block" data-evidence-block><legend>Bằng chứng @(i+1)</legend>
+        <label for="type-@i">Bạn muốn dùng bằng chứng nào?</label><select id="type-@i" name="evidence[@i].Type" class="evidence-type"><option value="">Chưa chọn bằng chứng</option><option value="Certificate">Chứng chỉ từ đơn vị bên ngoài</option><option value="Test">Kết quả bài kiểm tra đã đạt</option><option value="Portfolio">Sản phẩm trong Portfolio của tôi</option></select>
+        <div data-evidence-panel="Certificate"><p class="form-help">Dùng liên kết xác thực do đơn vị cấp chứng chỉ cung cấp.</p><label for="url-@i">Đường dẫn minh chứng HTTPS</label><input id="url-@i" name="evidence[@i].Url" type="url" pattern="https://.*" maxlength="1000" data-required /><label for="issuer-@i">Tổ chức cấp</label><input id="issuer-@i" name="evidence[@i].Issuer" maxlength="200" data-required /><div class="form-grid"><div><label for="issued-@i">Ngày cấp</label><input id="issued-@i" name="evidence[@i].IssuedOn" type="date" max="@DateTime.Today.ToString("yyyy-MM-dd")" data-required /></div><div><label for="expires-@i">Ngày hết hạn (nếu có)</label><input id="expires-@i" name="evidence[@i].ExpiresOn" type="date" /></div></div></div>
+        <div data-evidence-panel="Test"><label for="attempt-@i">Chọn kết quả bài kiểm tra</label><select id="attempt-@i" name="evidence[@i].SkillExamAttemptId" data-attempt-choice data-required><option value="">Chọn bài kiểm tra đã đạt của bạn</option>@foreach(var result in attempts) { <option value="@result.Id" data-skill-id="@result.SkillTrackId">@result.SkillTrack.Title · @result.Percent% · @result.SubmittedAtUtc.ToString("dd/MM/yyyy")</option> }</select><p class="form-help" data-empty-attempt hidden>Bạn chưa có kết quả đạt cho kỹ năng này. <a href="@Url.Action("Index","Skills")">Chọn bài kiểm tra phù hợp →</a></p></div>
+        <div data-evidence-panel="Portfolio"><label for="portfolio-@i">Chọn sản phẩm đã làm</label><select id="portfolio-@i" name="evidence[@i].PortfolioItemId" data-required><option value="">Chọn sản phẩm trong Portfolio của bạn</option>@foreach(var item in portfolio) { <option value="@item.Id">@item.Title · @item.Role</option> }</select><p class="form-help">Chọn sản phẩm thể hiện kỹ năng cần xác minh. <a href="@Url.Action("Index","Profile")">Thêm hoặc chỉnh Portfolio →</a></p></div>
+        </fieldset>
+    }
+    <button class="btn btn-primary" type="submit">Gửi bằng chứng để xét duyệt</button>
+    }
+}
+</section>
+<section class="panel section-small"><h2>Lịch sử xét duyệt</h2><p class="form-help">Tối đa 50 yêu cầu gần nhất. Lý do duyệt hoặc từ chối được hiển thị dưới từng yêu cầu.</p>@if(!requests.Any()) { <p class="empty">Chưa có yêu cầu xét duyệt. Sau khi gửi bằng chứng ở bước 2, bạn sẽ theo dõi kết quả tại đây.</p> } @foreach(var r in requests){<div class="list-item"><div><strong>@r.Claim.Skill.Title</strong><p>@r.SubmittedAtUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · Hiệu lực: @(r.ValidUntil.HasValue?r.ValidUntil.Value.ToString("dd/MM/yyyy"):"Không giới hạn")</p><p>@r.Reason</p></div><span class="pill">@NexusFreelance.Web.Services.WorkLabels.Evidence(r.Status)</span></div>}</section>
+

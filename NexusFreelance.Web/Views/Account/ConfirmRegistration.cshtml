@@ -1,0 +1,17 @@
+@model NexusFreelance.Web.Controllers.RegistrationConfirmationForm
+@{ ViewBag.Title = "Xác nhận email đăng ký"; }
+<section class="auth-panel panel"><span class="eyebrow">EMAIL VERIFICATION</span><h1>Xác nhận email</h1>
+@Html.Partial("_MailDeliveryNotice")
+<p>Nhập mã 6 chữ số của <strong>@Model.Email</strong> cho hồ sơ <strong>@(Model.Role=="Client"?"Khách hàng":"Freelancer")</strong>. Mã có hiệu lực 10 phút.</p>
+@using (Html.BeginForm("ConfirmRegistration", "Account", FormMethod.Post)) {
+    @Html.AntiForgeryToken() @Html.HiddenFor(m => m.Email) @Html.HiddenFor(m => m.Role)
+    @Html.ValidationSummary(false, "", new { @class = "error-list" })
+    <label for="Code">Mã xác nhận</label>@Html.TextBoxFor(m => m.Code, new { inputmode = "numeric", pattern = "[0-9]{6}", maxlength = "6", autocomplete = "one-time-code", required = "required" })
+    <button type="submit" class="btn btn-primary full">Xác minh email</button>
+}
+@using (Html.BeginForm("ResendRegistrationCode", "Account", FormMethod.Post)) {
+    @Html.AntiForgeryToken() @Html.HiddenFor(m => m.Email) @Html.HiddenFor(m => m.Role)
+    <button type="submit" class="btn btn-outline full">Gửi lại mã xác nhận</button>
+}
+<p class="muted">Không nhận được thư? Kiểm tra địa chỉ email và thư rác. Mỗi email được yêu cầu lại tối đa 3 lần mỗi giờ.</p>
+<a href="@Url.Action("Login")">Trở về đăng nhập</a></section>

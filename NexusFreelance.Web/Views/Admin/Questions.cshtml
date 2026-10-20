@@ -1,0 +1,47 @@
+@model NexusFreelance.Web.ViewModels.AdminQuestionBankPage
+@{ ViewBag.Title = "Ngân hàng câu hỏi"; }
+<section class="page-header"><h1>Ngân hàng câu hỏi: @Model.Track.Title</h1><p>Thí sinh cần ít nhất 5 câu hỏi để nộp bài. Câu hỏi đã có bài làm được khóa để giữ nguyên bằng chứng điểm thi.</p></section>
+<p><a class="btn btn-outline" href="@Url.Action("Skills")">← Danh mục kỹ năng</a></p>
+<p>Hiện có @Model.Questions.Count câu hỏi.</p>
+<div class="card">
+    <h2>Thêm câu hỏi</h2>
+    @using (Html.BeginForm("SaveQuestion", "Admin", FormMethod.Post)) {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="0" />
+        <input type="hidden" name="SkillTrackId" value="@Model.Track.Id" />
+        <label for="new-ordinal">Số thứ tự</label><input type="number" id="new-ordinal" name="Ordinal" required min="1" max="1000" value="@(Model.Questions.Count == 0 ? 1 : Model.Questions.Max(q => q.Ordinal) + 1)" />
+        <label for="new-prompt">Nội dung câu hỏi</label><textarea id="new-prompt" name="Prompt" required maxlength="500"></textarea>
+        <label for="new-a">Đáp án A</label><input id="new-a" name="ChoiceA" required maxlength="300" />
+        <label for="new-b">Đáp án B</label><input id="new-b" name="ChoiceB" required maxlength="300" />
+        <label for="new-c">Đáp án C</label><input id="new-c" name="ChoiceC" required maxlength="300" />
+        <label for="new-d">Đáp án D</label><input id="new-d" name="ChoiceD" required maxlength="300" />
+        <label for="new-correct">Đáp án đúng</label><select id="new-correct" name="CorrectChoice"><option>A</option><option>B</option><option>C</option><option>D</option></select>
+        <button class="btn btn-primary" type="submit">Thêm câu hỏi</button>
+    }
+</div>
+@foreach (var question in Model.Questions) {
+    <div class="card">
+        <h2>Câu @question.Ordinal</h2>
+        @if (Model.LockedQuestionIds.Contains(question.Id)) {
+            <p><strong>Đã có bài làm — khóa chỉnh sửa.</strong></p><p>@question.Prompt</p>
+        } else {
+            using (Html.BeginForm("SaveQuestion", "Admin", FormMethod.Post)) {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@question.Id" />
+                <input type="hidden" name="SkillTrackId" value="@Model.Track.Id" />
+                <label for="ordinal-@question.Id">Số thứ tự</label><input id="ordinal-@question.Id" type="number" name="Ordinal" required min="1" max="1000" value="@question.Ordinal" />
+                <label for="prompt-@question.Id">Nội dung</label><textarea id="prompt-@question.Id" name="Prompt" required maxlength="500">@question.Prompt</textarea>
+                <label for="a-@question.Id">A</label><input id="a-@question.Id" name="ChoiceA" value="@question.ChoiceA" required maxlength="300" />
+                <label for="b-@question.Id">B</label><input id="b-@question.Id" name="ChoiceB" value="@question.ChoiceB" required maxlength="300" />
+                <label for="c-@question.Id">C</label><input id="c-@question.Id" name="ChoiceC" value="@question.ChoiceC" required maxlength="300" />
+                <label for="d-@question.Id">D</label><input id="d-@question.Id" name="ChoiceD" value="@question.ChoiceD" required maxlength="300" />
+                <label for="correct-@question.Id">Đáp án đúng</label>
+                <select id="correct-@question.Id" name="CorrectChoice">
+                    @foreach (var choice in new[] { "A", "B", "C", "D" }) { <option value="@choice" @(question.CorrectChoice == choice ? "selected" : "")>@choice</option> }
+                </select>
+                <button type="submit" class="btn btn-outline">Cập nhật câu hỏi</button>
+            }
+        }
+    </div>
+}
+

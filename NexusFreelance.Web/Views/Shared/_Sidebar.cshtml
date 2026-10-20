@@ -1,0 +1,54 @@
+﻿@helper Item(string action, string controller, string icon, string label, string key) {
+    <a href="@Url.Action(action,controller)" title="@label" aria-label="@label" data-nav-key="@key">@Html.Partial("_Icon",icon)<span class="nav-label">@label</span></a>
+}
+@{ var role=(string)ViewBag.CurrentRole; }
+<aside class="app-sidebar" id="app-sidebar" aria-label="Điều hướng nghiệp vụ">
+    <div class="sidebar-top"><div><span class="sidebar-kicker">KHÔNG GIAN CỦA BẠN</span><p class="sidebar-role">@(role=="Client"?"Tôi cần thuê người":role=="Freelancer"?"Tôi tìm việc & cộng tác":"Quản trị hệ thống")</p></div><button class="icon-button sidebar-close" type="button" aria-label="Đóng điều hướng">@Html.Partial("_Icon","close")</button></div>
+    <nav class="sidebar-nav" aria-label="Tính năng theo quy trình">
+    @if(role=="Admin") {
+        <div class="nav-group" role="group" aria-label="Vận hành nền tảng"><span class="nav-group-title">VẬN HÀNH NỀN TẢNG</span>
+            @Item("Index","Admin","grid","Việc quản trị cần làm","admin-overview")
+            @Item("Users","Admin","user-cog","Tài khoản người dùng","admin-users")
+            @Item("Reports","Admin","shield-alert","Xử lý báo cáo vi phạm","admin-reports")
+            @Item("Index","Contracts","file-signature","Tra cứu hợp đồng","contracts")
+            @Item("Admin","Wallet","scale","Đối soát & tranh chấp","wallet")
+        </div>
+        <details class="nav-group" data-nav-section="assessment"><summary class="nav-group-summary"><span>DUYỆT NĂNG LỰC</span>@Html.Partial("_Icon","chevron")</summary>
+            @Item("Skills","Admin","layers","Danh mục kỹ năng","admin-skills")
+            @Item("Questions","Admin","list-help","Ngân hàng câu hỏi","admin-questions")
+            @Item("Badges","Admin","medal","Huy hiệu bài thi","admin-badges")
+            @Item("Admin","SkillEvidence","badge-check","Duyệt minh chứng","evidence")
+            @Item("Certifications","Admin","certificate-check","Duyệt chứng chỉ","admin-certifications")
+        </details>
+    } else {
+        @Item("Index","Dashboard","grid","Việc cần làm","overview")
+        <div class="nav-group" role="group" aria-label="@(role=="Client"?"Chuẩn bị và tuyển người":"Tìm việc và ứng tuyển")"><span class="nav-group-title">@(role=="Client"?"01 · CHUẨN BỊ & TUYỂN NGƯỜI":"01 · TÌM VIỆC & ỨNG TUYỂN")</span>
+        @if(role=="Client") { @Item("Create","Projects","file-plus","Tạo dự án mới","create") @Item("Mine","Projects","briefcase","Dự án & ứng viên","projects") }
+        else { @Item("Index","Home","search","Tìm dự án phù hợp","marketplace") @Item("Mine","Proposals","send","Theo dõi ứng tuyển","proposals") @Item("Index","Groups","users","Nhóm cộng tác","groups") }
+        </div>
+        <div class="nav-group" role="group" aria-label="Làm việc và thanh toán"><span class="nav-group-title">02 · LÀM VIỆC & THANH TOÁN</span>
+            @Item("Index","Contracts","file-signature","Hợp đồng & bàn giao","contracts")
+            @Item("Index","Messages","message-circle","Hội thoại & liên hệ","messages")
+            @Item("Index","Wallet","wallet","Ví & giao dịch","wallet")
+        </div>
+        if(role=="Client") { <div class="nav-group" role="group" aria-label="Thông tin của bạn"><span class="nav-group-title">THÔNG TIN CỦA BẠN</span>@Item("Index","ClientProfile","id-card","Hồ sơ người thuê","profile")</div> }
+        else { <details class="nav-group" data-nav-section="profile"><summary class="nav-group-summary"><span>03 · HỒ SƠ & NĂNG LỰC</span>@Html.Partial("_Icon","chevron")</summary>
+            @Item("Index","Profile","id-card","Hồ sơ & sản phẩm đã làm","profile")
+            @Item("Index","SkillEvidence","fingerprint","Xác minh kỹ năng","evidence")
+            @Item("Index","Skills","clipboard-check","Bài kiểm tra nội bộ","skills")
+            @Item("Certifications","Skills","certificate","Chứng chỉ đã có","certifications")
+            @Item("Index","Assessments","graduation-cap","Nơi học & thi chứng chỉ","assessments")
+            @Item("Index","Contribution","chart","Điểm đóng góp","contribution")
+        </details> }
+    }
+        @Item("Index","Knowledge","book-open","Kho tri thức sau dự án","knowledge")
+        <details class="nav-group" data-nav-section="account"><summary class="nav-group-summary"><span>TÀI KHOẢN & HỖ TRỢ</span>@Html.Partial("_Icon","chevron")</summary>
+            @Item("Index","Notifications","bell","Thông báo","notifications")
+            @Item("Security","Account","lock-keyhole","Bảo mật tài khoản","security")
+            @if(role=="Admin") { @Item("Audit","Admin","history","Nhật ký kiểm duyệt","admin-audit") }
+            else { @Item("Mine","Reports","flag","Báo cáo của tôi","reports") }
+            @Item("HowItWorks","Home","route","Hướng dẫn quy trình","guide")
+        </details>
+    </nav>
+    <div class="sidebar-foot"><span class="sidebar-foot-mark" aria-hidden="true">N</span><span class="nav-label">Bắt đầu từ Việc cần làm.<br/><strong>Mỗi bước đều có hướng dẫn.</strong></span></div>
+</aside>

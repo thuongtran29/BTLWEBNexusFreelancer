@@ -1,0 +1,22 @@
+﻿@model NexusFreelance.Web.ViewModels.LoginForm
+@{ ViewBag.Title = "Đăng nhập"; var googleReady=NexusFreelance.Web.Services.GoogleAuthSettings.IsConfigured; }
+<div class="auth-layout"><aside class="auth-intro"><span class="eyebrow">NEXUSFREELANCE</span><h2>Công việc tốt.<br />Kết nối đúng người.</h2><p>Không gian chung để tìm cộng sự, quản lý hợp đồng và đưa ý tưởng đến sản phẩm hoàn chỉnh.</p><div class="auth-benefit">@Html.Partial("_Icon", "users") Hồ sơ riêng cho từng vai trò</div><div class="auth-benefit">@Html.Partial("_Icon", "document") Hợp đồng rõ ràng giữa hai bên</div><div class="auth-benefit">@Html.Partial("_Icon", "shield") Theo dõi ký quỹ và bàn giao</div></aside>
+<div class="auth-panel panel"><span class="eyebrow">CHÀO MỪNG TRỞ LẠI</span><h1>Đăng nhập</h1><p class="muted">Đăng nhập để quản lý dự án và công việc của bạn.</p>
+@if (TempData["PasswordResetSuccess"] != null) { <p role="status" class="muted">@TempData["PasswordResetSuccess"]</p> }
+@if (TempData["VerificationNotice"] != null) { <p role="status" class="muted">@TempData["VerificationNotice"]</p> }
+@using (Html.BeginForm("Login", "Account", FormMethod.Post))
+{
+    @Html.AntiForgeryToken() @Html.ValidationSummary(false, "", new { @class = "error-list" })
+    <label for="Role">Đăng nhập với vai trò</label><select id="Role" name="Role" required><option value="Client" @(Model.Role == "Client" ? "selected" : "")>Khách hàng / Client</option><option value="Freelancer" @(Model.Role == "Freelancer" ? "selected" : "")>Freelancer</option><option value="Admin" @(Model.Role == "Admin" ? "selected" : "")>Quản trị</option></select>
+    <label for="Email">Email</label>@Html.TextBoxFor(m => m.Email, new { type = "email", required = "required", placeholder = "email@example.com", autocomplete = "username" })
+    <label for="Password">Mật khẩu</label>@Html.PasswordFor(m => m.Password, new { required = "required", autocomplete = "current-password" })
+    <button class="btn btn-primary full" type="submit">Đăng nhập →</button>
+    <button id="GoogleLoginButton" class="btn btn-outline full" type="submit" data-google-ready="@(googleReady?"true":"false")" disabled="@(googleReady?null:"disabled")" aria-describedby="google-login-note" formaction="@Url.Action("GoogleLogin", "Account")" formnovalidate>Tiếp tục bằng Google · Client</button>
+}
+<p id="google-login-note" class="muted">@(googleReady?"Google đăng nhập vào đúng vai trò đã chọn. Hồ sơ mật khẩu có sẵn cần liên kết Google trong Tài khoản & bảo mật trước.":"Google chưa sẵn sàng trên máy này. Bạn có thể đăng nhập bằng email và mật khẩu.")</p>
+<p class="muted">Cùng một email có thể có hai hồ sơ riêng. Hãy chọn đúng vai trò.</p>
+<p class="muted"><a href="@Url.Action("ForgotPassword", "Account")">Quên mật khẩu?</a></p>
+<p class="muted">Chưa xác minh email? <a href="@Url.Action("ResendVerification", "Account")">Nhận lại mã xác minh</a></p>
+<p class="muted">Chưa có tài khoản? <a href="@Url.Action("Register")">Đăng ký</a></p></div>
+
+</div>

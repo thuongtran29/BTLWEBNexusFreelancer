@@ -1,0 +1,16 @@
+@model NexusFreelance.Web.ViewModels.AdminDashboardPage
+@{ ViewBag.Title = "Quản trị hệ thống"; }
+<div class="page-head"><span class="eyebrow">VẬN HÀNH NỀN TẢNG</span><h1>Việc quản trị cần làm</h1><p>Chọn nhóm việc để xem các hồ sơ đang chờ xử lý. Đọc bằng chứng và ghi lý do trước khi đưa ra quyết định.</p></div>
+<div class="help-grid admin-work-grid">
+    <article class="help-card">@Html.Partial("_Icon","shield")<h3>Báo cáo vi phạm</h3><p>Xem nội dung bị báo cáo, kiểm tra bằng chứng và ghi nhận kết quả xử lý.</p><a href="@Url.Action("Reports")">Xem báo cáo chờ duyệt →</a></article>
+    <article class="help-card">@Html.Partial("_Icon","wallet")<h3>Đối soát &amp; tranh chấp</h3><p>Kiểm tra yêu cầu nạp/rút và các hợp đồng đang có tranh chấp trước khi xác nhận.</p><a href="@Url.Action("Admin","Wallet")">Mở hàng đợi tài chính →</a></article>
+    <article class="help-card">@Html.Partial("_Icon","award")<h3>Minh chứng kỹ năng</h3><p>Đối chiếu kỹ năng tự khai với sản phẩm, kết quả thi hoặc chứng chỉ của người nộp.</p><a href="@Url.Action("Admin","SkillEvidence")">Duyệt minh chứng đang chờ →</a></article>
+    <article class="help-card">@Html.Partial("_Icon","document")<h3>Chứng chỉ đã khai báo</h3><p>Kiểm tra đơn vị cấp, liên kết xác thực và thời hạn để duyệt hoặc yêu cầu bổ sung.</p><a href="@Url.Action("Certifications")">Xem chứng chỉ chờ duyệt →</a></article>
+</div>
+<section aria-label="Số liệu nền tảng" class="metrics">
+    <article class="metric"><span class="metric-label">Tài khoản</span><strong>@Model.UserCount</strong><a href="@Url.Action("Users")">Tra cứu người dùng →</a></article>
+    <article class="metric"><span class="metric-label">Đang tạm khóa</span><strong>@Model.SuspendedCount</strong><span class="metric-foot">Trạng thái hiện tại của tài khoản</span></article>
+    <article class="metric"><span class="metric-label">Dự án trên hệ thống</span><strong>@Model.ProjectCount</strong><span class="metric-foot">Gồm các trạng thái dự án</span></article>
+    <article class="metric"><span class="metric-label">Thao tác đã ghi nhật ký</span><strong>@Model.AuditCount</strong><a href="@Url.Action("Audit")">Xem lịch sử quản trị →</a></article>
+</section>
+<div class="page-explainer"><strong>Quản lý nội dung đánh giá</strong><a href="@Url.Action("Skills")">Danh mục kỹ năng</a><a href="@Url.Action("Questions")">Ngân hàng câu hỏi</a><a href="@Url.Action("Badges")">Huy hiệu bài thi</a><a href="@Url.Action("Index","Contracts")">Tra cứu hợp đồng</a><a href="@Url.Action("Activity")">Truy cập chức năng</a></div>

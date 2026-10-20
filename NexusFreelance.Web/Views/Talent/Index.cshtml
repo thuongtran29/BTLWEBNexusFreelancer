@@ -1,0 +1,61 @@
+@model NexusFreelance.Web.ViewModels.PublicTalentDirectoryPage
+@using System.Linq
+@{
+    ViewBag.Title = "Chuyên gia và nhóm";
+    var pages = Math.Max(1, (int)Math.Ceiling(Model.Total / 12.0));
+}
+<div class="page-head talent-head">
+    <span class="eyebrow">NEXUS TALENT NETWORK</span>
+    <h1>Khám phá <em>năng lực thực tế.</em></h1>
+    <p>Tìm chuyên gia và nhóm đang xây dựng hồ sơ nghề nghiệp trên NexusFreelance. Portfolio do thành viên tự cung cấp; Badge và chứng chỉ có nguồn xác minh riêng.</p>
+</div>
+<div class="talent-switch" aria-label="Loại hồ sơ">
+    <a class="btn @(Model.Kind == "freelancer" ? "btn-dark" : "btn-ghost")" href="@Url.Action("Index", new { kind = "freelancer", q = Model.Query, industry = ViewBag.Industry, skillId = ViewBag.SkillId, verifiedOnly = ViewBag.VerifiedOnly, sort = ViewBag.Sort })" aria-current="@(Model.Kind == "freelancer" ? "page" : null)">Freelancer</a>
+    <a class="btn @(Model.Kind == "group" ? "btn-dark" : "btn-ghost")" href="@Url.Action("Index", new { kind = "group", q = Model.Query, industry = ViewBag.Industry, skillId = ViewBag.SkillId, verifiedOnly = ViewBag.VerifiedOnly, sort = ViewBag.Sort })" aria-current="@(Model.Kind == "group" ? "page" : null)">Nhóm chuyên môn</a>
+</div>
+@using (Html.BeginForm("Index", "Talent", FormMethod.Get, new { @class = "filter-grid" }))
+{
+    <input type="hidden" name="kind" value="@Model.Kind" />
+    <label class="sr-only" for="talent-query">Tìm chuyên gia hoặc nhóm</label>
+    <input id="talent-query" name="q" value="@Model.Query" maxlength="100" placeholder="Tên, vai trò, chuyên môn..." />
+    <div><label for="talent-industry">Nhóm ngành nghề</label><select id="talent-industry" name="industry"><option value="">Tất cả nhóm ngành</option>@foreach(var i in NexusFreelance.Web.Services.IndustryCatalog.All){<option value="@i" @((string)ViewBag.Industry==i?"selected":"")>@i</option>}</select></div>
+    <div><label for="talent-skill">Kỹ năng</label><select id="talent-skill" name="skillId"><option value="">Tất cả kỹ năng</option>@foreach(var skill in (List<NexusFreelance.Web.Models.SkillTrack>)ViewBag.TrackOptions){<option value="@skill.Id" @((int?)ViewBag.SkillId==skill.Id?"selected":"")>@skill.Title</option>}</select></div>
+    <label><input type="checkbox" name="verifiedOnly" value="true" @((bool)ViewBag.VerifiedOnly?"checked":"") /> Chỉ kỹ năng có minh chứng được quản trị duyệt</label>
+    <div><label for="talent-sort">Sắp xếp</label><select id="talent-sort" name="sort"><option value="recent" @((string)ViewBag.Sort=="recent"?"selected":"")>Mới cập nhật</option><option value="az" @((string)ViewBag.Sort=="az"?"selected":"")>Tên A → Z</option><option value="za" @((string)ViewBag.Sort=="za"?"selected":"")>Tên Z → A</option></select></div>
+    <button class="btn btn-primary" type="submit">Tìm kiếm →</button>
+}
+<div class="heading-row"><h2>@(Model.Kind == "group" ? "Nhóm chuyên môn" : "Freelancer")</h2><span class="pill">@Model.Total hồ sơ</span></div>
+@if (Model.Total == 0) { <div class="empty">Chưa có hồ sơ phù hợp. Bạn có thể thử từ khóa khác.</div> }
+<div class="grid talent-grid">
+    @foreach (var person in Model.Freelancers)
+    {
+        var displayName = string.IsNullOrWhiteSpace(person.Name) ? "Freelancer" : person.Name.Trim();
+        <article class="card talent-card">
+            @Html.Partial("_Avatar", new NexusFreelance.Web.ViewModels.AvatarView {Id=person.Id,Name=displayName})
+            <h3><a href="@Url.Action("Freelancer", new { id = person.Id })">@displayName</a></h3>
+            <span class="pill">@(string.IsNullOrWhiteSpace(person.CoreRole) ? "Chuyên gia tự do" : person.CoreRole)</span>
+            @{ var roleLabels = (System.Collections.Generic.Dictionary<int,string>)ViewBag.SelectedRoles; }
+            @if (roleLabels.ContainsKey(person.Id) && !string.IsNullOrWhiteSpace(roleLabels[person.Id])) { <p class="form-help">@roleLabels[person.Id]</p> }
+            <p>@(string.IsNullOrEmpty(person.Bio) ? "Đang cập nhật giới thiệu." : (person.Bio.Length > 145 ? person.Bio.Substring(0, 145) + "…" : person.Bio))</p>
+            <div class="card-bottom"><span>@(person.IsAvailable ? "● Sẵn sàng hợp tác" : "Đang bận")</span><a href="@Url.Action("Freelancer", new { id = person.Id })">Xem hồ sơ ↗</a></div>
+        </article>
+    }
+    @foreach (var group in Model.Groups)
+    {
+        <article class="card talent-card">
+            <div class="talent-avatar" aria-hidden="true">✦</div>
+            <h3><a href="@Url.Action("Group", new { id = group.Id })">@group.Name</a></h3>
+            <span class="pill">@group.MemberCount thành viên</span>
+            <p>@(string.IsNullOrWhiteSpace(group.Description) ? "Nhóm đang cập nhật giới thiệu." : (group.Description.Length > 145 ? group.Description.Substring(0, 145) + "…" : group.Description))</p>
+            <div class="card-bottom"><span>Leader: @group.LeaderName</span><a href="@Url.Action("Group", new { id = group.Id })">Xem nhóm ↗</a></div>
+        </article>
+    }
+</div>
+@if (pages > 1)
+{
+    <nav class="pagination" aria-label="Trang hồ sơ">
+        @if (Model.Page > 1) { <a href="@Url.Action("Index", new { kind = Model.Kind, q = Model.Query, industry = ViewBag.Industry, skillId = ViewBag.SkillId, verifiedOnly = ViewBag.VerifiedOnly, sort = ViewBag.Sort, page = Model.Page - 1 })">← Trước</a> }
+        <span>Trang @Model.Page / @pages</span>
+        @if (Model.Page < pages) { <a href="@Url.Action("Index", new { kind = Model.Kind, q = Model.Query, industry = ViewBag.Industry, skillId = ViewBag.SkillId, verifiedOnly = ViewBag.VerifiedOnly, sort = ViewBag.Sort, page = Model.Page + 1 })">Tiếp →</a> }
+    </nav>
+}

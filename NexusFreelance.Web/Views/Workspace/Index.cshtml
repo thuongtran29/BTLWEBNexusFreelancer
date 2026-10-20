@@ -1,0 +1,299 @@
+﻿@using System.Linq
+@using NexusFreelance.Web.Models
+@model NexusFreelance.Web.Models.Workspace
+@{
+    ViewBag.Title = "Workspace " + Model.Project.Title;
+    var tasks = ViewBag.Tasks as System.Collections.Generic.List<WorkTask> ?? new System.Collections.Generic.List<WorkTask>();
+    var taskHistories = ViewBag.TaskHistories as System.Collections.Generic.List<TaskHistory> ?? new System.Collections.Generic.List<TaskHistory>();
+    var deliverables = ViewBag.Deliverables as System.Collections.Generic.List<Deliverable> ?? new System.Collections.Generic.List<Deliverable>();
+    var fileVersions = ViewBag.FileVersions as System.Collections.Generic.List<NexusFreelance.Web.ViewModels.WorkspaceFileRow> ?? new System.Collections.Generic.List<NexusFreelance.Web.ViewModels.WorkspaceFileRow>();
+    var members = ViewBag.Members as System.Collections.Generic.List<TeamMember> ?? new System.Collections.Generic.List<TeamMember>();
+    var messages = ViewBag.Messages as System.Collections.Generic.List<WorkspaceMessage> ?? new System.Collections.Generic.List<WorkspaceMessage>();
+    var milestones = ViewBag.Milestones as System.Collections.Generic.List<ProjectMilestone> ?? new System.Collections.Generic.List<ProjectMilestone>();
+    var meetings = ViewBag.Meetings as System.Collections.Generic.List<WorkspaceMeeting> ?? new System.Collections.Generic.List<WorkspaceMeeting>();
+    var isClient = (bool)ViewBag.IsClient;
+    var canManageWork = (bool)ViewBag.CanManageWork;
+    var isAudit = (bool)ViewBag.IsAudit;
+    var submitMilestones = ViewBag.EscrowMilestones as List<EscrowMilestone> ?? new List<EscrowMilestone>();
+    var currentUserId = (int)ViewBag.CurrentUserId;
+}
+@if(isAudit) { <p class="alert info" role="status">Chế độ kiểm tra của quản trị: chỉ xem tiến độ, bàn giao và trao đổi để xử lý tranh chấp. Các thao tác làm việc vẫn thuộc các bên hợp đồng.</p> }
+@if(isClient) { <p class="alert info">Bạn theo dõi tiến độ và nghiệm thu. Hãy gửi yêu cầu điều chỉnh ở mục Trao đổi để người phụ trách cập nhật kế hoạch.</p> }
+@if(!Model.ContractId.HasValue) { <p><a class="btn btn-outline" href="@Url.Action("Project", "Wallet", new { id = Model.ProjectId })">Hợp đồng, ký quỹ và mốc thanh toán →</a></p> }
+@if ((string)ViewBag.WorkStatus=="AwaitingSignatures" || (string)ViewBag.WorkStatus=="AwaitingEscrow") { <p class="alert danger">Hợp đồng cần đủ xác nhận và bảo đảm mốc đầu trước khi bắt đầu.</p> }
+@if((string)ViewBag.WorkStatus=="Disputed") {<p class="alert danger">Hợp đồng này tạm dừng để xử lý tranh chấp. Tiền và bàn giao được giữ nguyên.</p>}
+<div class="page-head"><span class="eyebrow">COLLABORATIVE WORKSPACE</span><h1>@Model.Project.Title</h1><p>@members.Count thành viên · Trạng thái @NexusFreelance.Web.Services.ContractPresentation.Status((string)ViewBag.WorkStatus)</p></div>
+@if (((string)ViewBag.WorkStatus == "Completed" && (!Model.ContractId.HasValue || isClient)))
+{
+    <p><a class="btn btn-outline" href="@Url.Action("Index", "ProjectMemory", new { projectId = Model.ProjectId })">Xem Project Memory nội bộ →</a></p>
+}
+<nav class="workspace-jumps" aria-label="Các phần trong không gian làm việc"><a href="#deliverables">Bàn giao &amp; nghiệm thu</a><a href="#work-tasks">Công việc</a><a href="#milestones">Mốc nội bộ</a><a href="#meetings">Lịch hẹn</a><a href="#workspace-files">Tệp làm việc</a><a href="#discussion">Trao đổi</a></nav>
+<section class="panel section-small" id="deliverables"><div class="heading-row"><h2>Bàn giao &amp; nghiệm thu</h2><span class="eyebrow">SẢN PHẨM BÀN GIAO</span></div>
+@if (!deliverables.Any()) { <div class="empty">Chưa có bàn giao nào.</div> }
+@foreach (var d in deliverables)
+{
+    <div class="list-item deliverable-row"><div><h3><a href="@d.Url" target="_blank" rel="noopener noreferrer">@d.Title ↗</a></h3><p class="muted">@d.SubmittedBy.Name · <time datetime="@d.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")">@NexusFreelance.Web.Services.DisplayTime.Vietnam(d.CreatedAtUtc)</time></p></div>
+    @if(d.EscrowMilestone!=null){<div class="delivery-criteria"><strong>Mốc: @d.EscrowMilestone.Title · @d.EscrowMilestone.Amount.ToString("N0") VND</strong><p>Tiêu chí: @(string.IsNullOrWhiteSpace(d.EscrowMilestone.AcceptanceCriteria)?"Theo phạm vi hợp đồng đã xác nhận.":d.EscrowMilestone.AcceptanceCriteria)</p></div>}
+    <div class="delivery-actions"><span class="pill">@NexusFreelance.Web.Services.ContractPresentation.Status(d.Status)</span>
+    @if (isClient && d.Status == "Submitted" && (bool)ViewBag.CanWork)
+    {
+        using (Html.BeginForm("Decide", "Workspace", new { id = d.Id, decision = "Approved" }, FormMethod.Post, new { @class = "inline", data_confirm=d.EscrowMilestoneId.HasValue?"Nghiệm thu sản phẩm này và giải ngân tiền của đúng mốc? Hãy kiểm tra sản phẩm và tiêu chí trước khi xác nhận.":"Nghiệm thu sản phẩm của hợp đồng cũ? Thao tác này chỉ ghi nhận nghiệm thu, không tạo giao dịch tiền." }))
+        {
+            @Html.AntiForgeryToken()
+            <button class="btn btn-primary" type="submit">@(d.EscrowMilestoneId.HasValue?"Nghiệm thu & giải ngân":"Nghiệm thu sản phẩm")</button>
+        }
+    }
+    </div>
+    @if (isClient && d.Status == "Submitted" && (bool)ViewBag.CanWork)
+    {
+        <details class="revision-request"><summary class="btn btn-outline">Yêu cầu sửa</summary>
+        @using (Html.BeginForm("Decide", "Workspace", new { id = d.Id, decision = "RevisionsRequested" }, FormMethod.Post)) {
+            @Html.AntiForgeryToken()<label for="revision-feedback-@d.Id">Nội dung cần chỉnh sửa</label><textarea id="revision-feedback-@d.Id" name="feedback" required minlength="10" maxlength="1000" rows="3" placeholder="Nêu mục chưa đạt, kết quả mong đợi và tiêu chí kiểm tra lại."></textarea><p class="form-help">Phản hồi lưu trong trao đổi của hợp đồng; tiền tiếp tục được giữ cho mốc này.</p><button class="btn btn-primary" type="submit">Gửi yêu cầu chỉnh sửa</button>
+        }</details>
+    }
+    </div>
+    if ((bool)ViewBag.CanSubmit && (bool)ViewBag.CanWork && d.SubmittedById == currentUserId
+        && d.Status == "RevisionsRequested" && !deliverables.Any(next => next.RevisesId == d.Id))
+    {
+        <form method="post" action="@Url.Action("Submit")" class="form-grid revision-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="WorkspaceId" value="@Model.Id" />
+            <input type="hidden" name="RevisesId" value="@d.Id" />
+            <input type="hidden" name="EscrowMilestoneId" value="@d.EscrowMilestoneId" />
+            <div><label for="RevisionTitle_@d.Id">Tên bản đã sửa</label><input id="RevisionTitle_@d.Id" name="Title" maxlength="200" value="@d.Title" required /></div>
+            <div><label for="RevisionUrl_@d.Id">Liên kết HTTPS mới</label><input id="RevisionUrl_@d.Id" name="Url" type="url" maxlength="1000" required placeholder="https://..." /></div>
+            <div><label aria-hidden="true">&nbsp;</label><button class="btn btn-primary" type="submit">Nộp lại bản sửa ↗</button></div>
+        </form>
+    }
+}
+@if (!isClient && (bool)ViewBag.CanSubmit && (bool)ViewBag.CanWork && (submitMilestones.Any() || (bool)ViewBag.LegacyWithoutEscrow))
+{
+    <form method="post" action="@Url.Action("Submit")" class="form-grid">
+        @Html.AntiForgeryToken()<input type="hidden" name="WorkspaceId" value="@Model.Id" />
+        @if (submitMilestones.Any()) {
+            <div><label for="EscrowMilestoneId">Mốc đã ký quỹ</label><select id="EscrowMilestoneId" name="EscrowMilestoneId" required>@foreach (var escrow in submitMilestones) { <option value="@escrow.Id">#@escrow.Id · @escrow.Title · @escrow.Amount.ToString("N0") VND</option> }</select><p class="muted">Chỉ nộp bàn giao cho mốc đã ký quỹ hoặc được yêu cầu sửa. Duyệt mốc sẽ tự giải ngân.</p></div>
+        } else {
+            <p class="muted">Không gian lịch sử chưa có kế hoạch ký quỹ. Bàn giao tại đây chỉ ghi nhận sản phẩm, không tự tạo giao dịch tiền.</p>
+        }
+        <div><label for="DelTitle">Tên bản bàn giao</label><input id="DelTitle" name="Title" maxlength="200" required placeholder="Source code v1" /></div>
+        <div><label for="Url">Link tài liệu HTTPS</label><input id="Url" name="Url" type="url" maxlength="1000" required placeholder="https://..." /></div>
+        <div><label aria-hidden="true">&nbsp;</label><button class="btn btn-primary" type="submit">Nộp bàn giao →</button></div>
+    </form>
+}
+else if (!isClient && (bool)ViewBag.CanSubmit && (bool)ViewBag.CanWork)
+{
+    <p class="alert info">Chưa có mốc đủ điều kiện nộp mới. Nếu đã gửi sản phẩm, hãy chờ khách hàng nghiệm thu hoặc yêu cầu sửa ở bản bàn giao phía trên. Mốc tiếp theo cần được ký quỹ trước khi nộp.</p>
+}
+</section>
+<div class="section-small" id="work-tasks"><div class="heading-row"><h2>Kanban · Tiến độ công việc</h2><a href="@Url.Action("Details", "Projects", new { id = Model.ProjectId })">Chi tiết dự án ↗</a></div>
+<div class="kanban">
+@foreach (var state in new[] { "ToDo", "Doing", "Review", "Done" })
+{
+    <section class="kanban-column"><h3>@NexusFreelance.Web.Services.WorkLabels.Task(state) <span class="pill">@tasks.Count(t => t.Status == state)</span></h3>
+    @foreach (var task in tasks.Where(t => t.Status == state))
+    {
+        <article class="task-card"><strong>@task.Title</strong>
+            <p class="muted">@task.Assignee.Name · Ưu tiên: @NexusFreelance.Web.Services.WorkLabels.Priority(task.Priority)</p>
+            @if (task.DueAtUtc.HasValue) { <p class="muted">Hạn: @task.DueAtUtc.Value.ToString("dd/MM/yyyy HH:mm") UTC</p> }
+            @if ((bool)ViewBag.CanWork && (canManageWork || task.AssigneeId == currentUserId))
+            {
+                <form method="post" action="@Url.Action("UpdateTask")">
+                    @Html.AntiForgeryToken()<input type="hidden" name="id" value="@task.Id" />
+                    <label class="sr-only" for="status_@task.Id">Chuyển trạng thái</label>
+                    <select id="status_@task.Id" name="status">
+                    @foreach (var next in new[] { "ToDo", "Doing", "Review", "Done" }) {
+                        if (Math.Abs(Array.IndexOf(new[] { "ToDo", "Doing", "Review", "Done" }, next) - Array.IndexOf(new[] { "ToDo", "Doing", "Review", "Done" }, task.Status)) == 1) {
+                            <option value="@next">@NexusFreelance.Web.Services.WorkLabels.Task(next)</option>
+                        }
+                    }
+                    </select><button class="btn btn-outline" type="submit">Cập nhật</button>
+                </form>
+            }
+            @if (canManageWork && (bool)ViewBag.CanWork)
+            {
+                <details class="task-edit">
+                    <summary>Chỉnh sửa chi tiết</summary>
+                    <form method="post" action="@Url.Action("EditTask", "Workspace")" class="task-edit-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@task.Id" />
+                        <label for="editTitle_@task.Id">Tên Task</label>
+                        <input id="editTitle_@task.Id" name="Title" value="@task.Title" maxlength="200" required />
+                        <label for="editAssignee_@task.Id">Người phụ trách</label>
+                        <select id="editAssignee_@task.Id" name="AssigneeId">
+                            @foreach (var member in members)
+                            {
+                                <option value="@member.UserAccountId" selected="@(member.UserAccountId == task.AssigneeId ? "selected" : null)">@member.User.Name</option>
+                            }
+                        </select>
+                        <label for="editPriority_@task.Id">Ưu tiên</label>
+                        <select id="editPriority_@task.Id" name="Priority">
+                            @foreach (var p in new[] { "Low", "Normal", "High" })
+                            {
+                                <option value="@p" selected="@(p == (task.Priority ?? "Normal") ? "selected" : null)">@NexusFreelance.Web.Services.WorkLabels.Priority(p)</option>
+                            }
+                        </select>
+                        <label for="editDue_@task.Id">Hạn (UTC, tùy chọn)</label>
+                        <input id="editDue_@task.Id" type="datetime-local" name="DueAtUtc" value="@(task.DueAtUtc.HasValue ? task.DueAtUtc.Value.ToString("yyyy-MM-ddTHH:mm") : "")" />
+                        <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+                    </form>
+                </details>
+            }
+        </article>
+    }
+    </section>
+}
+</div></div>
+<section class="panel section-small" id="task-history">
+    <div class="heading-row"><h2>Lịch sử Task</h2><span class="eyebrow">100 thay đổi gần nhất</span></div>
+    @if (!taskHistories.Any()) { <div class="empty">Chưa có lịch sử Task mới.</div> }
+    @foreach (var entry in taskHistories)
+    {
+        <div class="list-item"><div><strong>Task #@entry.WorkTaskId</strong>
+            <p class="muted">@entry.Actor.Name · @entry.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") UTC</p></div>
+            <div>
+                <span class="pill">@(entry.EventType == "Created" ? "Tạo: Chưa bắt đầu" : entry.EventType == "Edited" ? "Chỉnh sửa chi tiết" : NexusFreelance.Web.Services.WorkLabels.Task(entry.OldStatus) + " → " + NexusFreelance.Web.Services.WorkLabels.Task(entry.NewStatus))</span>
+                @if (entry.EventType == "Edited")
+                {
+                    if (entry.OldTitle != entry.NewTitle) { <p class="muted">Tiêu đề: @entry.OldTitle → @entry.NewTitle</p> }
+                    if (entry.OldAssigneeId != entry.NewAssigneeId) { <p class="muted">Người phụ trách: #@entry.OldAssigneeId → #@entry.NewAssigneeId</p> }
+                    if (entry.OldPriority != entry.NewPriority) { <p class="muted">Ưu tiên: @entry.OldPriority → @entry.NewPriority</p> }
+                    if (entry.OldDueAtUtc != entry.NewDueAtUtc) { <p class="muted">Hạn (UTC): @(entry.OldDueAtUtc.HasValue ? entry.OldDueAtUtc.Value.ToString("dd/MM/yyyy HH:mm") : "Trống") → @(entry.NewDueAtUtc.HasValue ? entry.NewDueAtUtc.Value.ToString("dd/MM/yyyy HH:mm") : "Trống")</p> }
+                }
+            </div>
+        </div>
+    }
+</section>
+<section class="panel section-small" id="milestones">
+    <div class="heading-row"><h2>Mốc tiến độ nội bộ</h2><span class="eyebrow">@milestones.Count MỐC THEO DÕI</span></div>
+    <p class="muted">Dùng để theo dõi công việc của cá nhân hoặc cả nhóm. Đánh dấu hoàn thành ở đây không nghiệm thu hay chuyển tiền; mốc thanh toán nằm trong điều khoản hợp đồng và phần Bàn giao &amp; nghiệm thu.</p>
+    @if (!milestones.Any()) { <div class="empty">Chưa có mốc tiến độ nào.</div> }
+    @foreach (var milestone in milestones)
+    {
+        <div class="list-item"><div><h3>@milestone.Title</h3>
+            <p class="muted">Hạn: @milestone.DueAtUtc.ToString("dd/MM/yyyy HH:mm") UTC</p></div>
+            <div><span class="pill">@(milestone.Status=="Completed"?"Đã hoàn thành":"Đang theo dõi")</span>
+            @if (canManageWork && (bool)ViewBag.CanWork && milestone.Status == "Planned")
+            {
+                using (Html.BeginForm("CompleteMilestone", "Workspace", new { id = milestone.Id }, FormMethod.Post, new { @class = "inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline">Đánh dấu hoàn thành</button>
+                }
+            }</div>
+        </div>
+    }
+    @if (canManageWork && (bool)ViewBag.CanWork)
+    {
+        <form method="post" action="@Url.Action("CreateMilestone", "Workspace")" class="form-grid">
+            @Html.AntiForgeryToken()<input type="hidden" name="WorkspaceId" value="@Model.Id" />
+            <div><label for="MilestoneTitle">Tên mốc</label><input id="MilestoneTitle" name="Title" maxlength="180" required /></div>
+            <div><label for="DueAtUtc">Hạn (UTC)</label><input id="DueAtUtc" name="DueAtUtc" type="datetime-local" required /></div>
+            <div><label aria-hidden="true">&nbsp;</label><button class="btn btn-primary" type="submit">Thêm mốc</button></div>
+        </form>
+    }
+</section>
+<section class="panel section-small" id="meetings">
+    <div class="heading-row"><h2>Lịch trao đổi</h2><span class="eyebrow">@meetings.Count LỊCH HẸN</span></div>
+    @if (!meetings.Any()) { <div class="empty">Chưa có cuộc họp nào.</div> }
+    @foreach (var meeting in meetings)
+    {
+        <div class="list-item"><div><h3>@meeting.Title</h3><p class="muted">@meeting.StartsAtUtc.ToString("dd/MM/yyyy HH:mm") UTC</p></div>
+            <div><a class="btn btn-outline" href="@meeting.Url" rel="noopener noreferrer" target="_blank">Mở phòng họp ↗</a></div>
+        </div>
+    }
+    @if ((isClient || canManageWork) && (bool)ViewBag.CanWork)
+    {
+        <form method="post" action="@Url.Action("ScheduleMeeting", "Workspace")" class="form-grid">
+            @Html.AntiForgeryToken()<input type="hidden" name="WorkspaceId" value="@Model.Id" />
+            <div><label for="MeetingTitle">Chủ đề họp</label><input id="MeetingTitle" name="Title" maxlength="180" required /></div>
+            <div><label for="StartsAtUtc">Thời gian (UTC)</label><input id="StartsAtUtc" name="StartsAtUtc" type="datetime-local" required /></div>
+            <div><label for="MeetingUrl">Liên kết HTTPS</label><input id="MeetingUrl" name="Url" type="url" maxlength="1000" placeholder="https://meet.google.com/..." required /></div>
+            <div><label aria-hidden="true">&nbsp;</label><button class="btn btn-primary" type="submit">Đặt lịch họp</button></div>
+        </form>
+    }
+</section>
+@if (canManageWork && (bool)ViewBag.CanWork)
+{
+    <section class="panel section-small"><h2>+ Giao nhiệm vụ</h2><form method="post" action="@Url.Action("CreateTask")" class="form-grid">
+        @Html.AntiForgeryToken()<input type="hidden" name="WorkspaceId" value="@Model.Id" />
+        <div><label for="Title">Tên Task</label><input id="Title" name="Title" maxlength="200" required /></div>
+        <div><label for="AssigneeId">Thành viên phụ trách</label><select id="AssigneeId" name="AssigneeId">@foreach (var member in members) { <option value="@member.UserAccountId">@member.User.Name</option> }</select></div>
+        <div><label for="TaskPriority">Ưu tiên</label><select id="TaskPriority" name="Priority"><option value="Normal">Bình thường</option><option value="Low">Thấp</option><option value="High">Cao</option></select></div>
+        <div><label for="TaskDueAtUtc">Hạn (UTC, tùy chọn)</label><input id="TaskDueAtUtc" name="DueAtUtc" type="datetime-local" /></div>
+        <div><label aria-hidden="true">&nbsp;</label><button type="submit" class="btn btn-primary">Tạo task →</button></div>
+    </form></section>
+}
+<section class="panel section-small" id="workspace-files">
+    <div class="heading-row"><h2>Tệp làm việc &amp; phiên bản</h2><span class="eyebrow">TỆP NỘI BỘ · TỐI ĐA 8 MB / TỆP</span></div>
+      <p class="muted">Chủ dự án, thành viên được phân công và quản trị viên xử lý vụ việc có thể đọc tệp. Các bản cũ được lưu nguyên vẹn. Tệp được kiểm tra định dạng và cấu trúc; chưa thay thế quét mã độc. Không tải tệp lạ về chạy trực tiếp.</p>
+    @if (ViewBag.FilePageBefore != null) { <p><a href="@Url.Action("Index", "Workspace", new { id = Model.Id })#workspace-files">← Quay về những phiên bản mới nhất</a></p> }
+    @if (!fileVersions.Any()) { <div class="empty">Chưa có tệp nào được tải lên.</div> }
+    @foreach (var version in fileVersions)
+    {
+        <div class="list-item">
+            <div>
+                <h3><a class="btn btn-outline" href="@Url.Action("Download", "WorkspaceFiles", new { id = version.VersionId })">@version.FileName ↓</a></h3>
+                <p class="muted">Phiên bản @version.VersionNumber · @version.UploadedByName · @version.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") UTC · @Math.Ceiling(version.ByteLength / 1024m) KB</p>
+            </div>
+            @if ((bool)ViewBag.CanWork && version.IsLatest)
+            {
+                <form action="@Url.Action("Upload", "WorkspaceFiles")" method="post" enctype="multipart/form-data" class="inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="WorkspaceId" value="@Model.Id" />
+                    <input type="hidden" name="FileId" value="@version.FileId" />
+                    <label for="revisionFile_@version.FileId">Bản cập nhật</label>
+                    <input id="revisionFile_@version.FileId" name="upload" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.zip,.docx,.xlsx" required />
+                    <button type="submit" class="btn btn-outline">Tải phiên bản mới</button>
+                </form>
+            }
+        </div>
+    }
+    @if ((bool)ViewBag.HasOlderFileVersions && fileVersions.Any())
+    {
+        <p><a href="@Url.Action("Index", "Workspace", new { id = Model.Id, beforeFileVersionId = fileVersions.Last().VersionId })#workspace-files">Xem 30 phiên bản cũ hơn →</a></p>
+    }
+    @if ((bool)ViewBag.CanWork)
+    {
+        <form action="@Url.Action("Upload", "WorkspaceFiles")" method="post" enctype="multipart/form-data" class="form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="WorkspaceId" value="@Model.Id" />
+            <div><label for="newWorkspaceFile">Tải tệp mới (PDF, ảnh, TXT, ZIP, DOCX, XLSX)</label>
+                <input id="newWorkspaceFile" name="upload" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.zip,.docx,.xlsx" required /></div>
+            <div><label aria-hidden="true">&nbsp;</label><button class="btn btn-primary" type="submit">Lưu tệp →</button></div>
+        </form>
+    }
+</section>
+<section class="panel section-small" id="discussion" data-realtime-channel data-workspace-id="@Model.Id" data-last-message="@(messages.Any() ? messages.Last().Id : 0)" data-history="@(Request.QueryString["beforeMessageId"] != null ? "true" : "false")">
+    <p class="live-status" data-live-status role="status" aria-live="polite"></p>
+    <button class="btn btn-outline live-new-messages" type="button" data-live-jump hidden>Có tin mới · Cuối hội thoại</button>
+    <a class="btn btn-outline live-new-messages" data-live-latest href="@Url.Action("Index", new { id = Model.Id })#discussion" hidden>Về tin nhắn mới nhất</a>
+    <div class="heading-row"><h2>Trao đổi dự án</h2><span class="eyebrow">CHAT NỘI BỘ · @messages.Count TIN GẦN NHẤT</span></div>
+    @if ((bool)ViewBag.HasOlderMessages && messages.Any())
+    {
+        <p><a href="@Url.Action("Index", "Workspace", new { id = Model.Id, beforeMessageId = messages[0].Id })#discussion">← Xem 50 tin nhắn cũ hơn</a></p>
+    }
+    @if (!messages.Any()) { <div class="empty">Chưa có tin nhắn trong cuộc trao đổi này.</div> }
+    <div class="chat-thread" aria-label="Lịch sử trao đổi" role="log" aria-live="polite" aria-relevant="additions">
+    @foreach (var message in messages)
+    {
+        <article class="chat-message" data-message-id="@message.Id">
+            <div class="chat-meta"><strong>@message.Author.Name</strong><time datetime="@message.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")">@NexusFreelance.Web.Services.DisplayTime.Vietnam(message.CreatedAtUtc)</time></div>
+            <p class="chat-body">@message.Body</p>
+        </article>
+    }
+    </div>
+    @if ((bool)ViewBag.CanDiscuss)
+    {
+        <form method="post" action="@Url.Action("SendMessage", "Workspace")" class="chat-compose">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="WorkspaceId" value="@Model.Id" />
+            <label for="ChatBody">Tin nhắn mới</label>
+            <textarea id="ChatBody" name="Body" required maxlength="2000" rows="3" placeholder="Trao đổi phạm vi, tiến độ hoặc bổ sung giải trình và liên kết bằng chứng..."></textarea>
+            <button class="btn btn-primary" type="submit">Gửi tin nhắn →</button>
+        </form>
+    }
+    else { <p class="muted">Kênh này chỉ đọc với quyền hoặc trạng thái hiện tại. Lịch sử trao đổi được lưu để tra cứu.</p> }
+    @if ((bool)ViewBag.HasOlderMessages) { <p><a href="@Url.Action("Index", "Workspace", new { id = Model.Id })#discussion">Xem tin nhắn mới nhất →</a></p> }
+</section>
+<p data-live-send-status class="form-help" role="status" aria-live="polite"></p>
+

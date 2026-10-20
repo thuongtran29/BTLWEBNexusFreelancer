@@ -1,0 +1,50 @@
+@using System.Linq
+@using NexusFreelance.Web.Services
+@model NexusFreelance.Web.ViewModels.ContractDetailsPage
+@if(Model.IsAdmin || Model.IsOwner)
+{
+    <section class="panel section-small">
+        <h2>Hoàn tiền qua VNPay</h2>
+        <p>Tiền chỉ hoàn qua cổng sau quyết toán mốc. Khoản chưa rõ kết quả tiếp tục được giữ để đối soát.</p>
+        @if(Model.IsAdmin)
+        {
+            <p class="muted">Tối đa một yêu cầu cho mỗi giao dịch gốc. Không gửi lại lệnh đã mất phản hồi.</p>
+            foreach(var p in Model.Payments.Where(p=>p.Status=="Paid" || p.Status=="PaidUnallocated"))
+            {
+                if(!Model.Refunds.Any(r=>r.PaymentIntentId==p.Id))
+                {
+                    using(Html.BeginForm("Refund","Payments",new{id=p.Id},FormMethod.Post,new{data_confirm="Gửi yêu cầu hoàn khoản tiền đã được quyết toán qua VNPay?"}))
+                    {
+                        @Html.AntiForgeryToken()
+                        <label for="refund-amount-@p.Id">Số tiền hoàn giao dịch @p.TxnRef</label>
+                        <input id="refund-amount-@p.Id" name="amount" type="number" min="1" max="@p.Amount.ToString("0")" required />
+                        <label for="refund-reason-@p.Id">Lý do đối soát</label>
+                        <textarea id="refund-reason-@p.Id" name="reason" minlength="15" maxlength="300" required></textarea>
+                        <button class="btn btn-outline" type="submit">Gửi lệnh hoàn</button>
+                    }
+                }
+            }
+        }
+        @if(!Model.Refunds.Any()) { <p class="muted">Chưa có yêu cầu hoàn tiền qua VNPay.</p> }
+        @foreach(var refund in Model.Refunds)
+        {
+            <article class="contract-refund">
+                <h3>Yêu cầu hoàn #@refund.Id</h3>
+                <p>@refund.Amount.ToString("N0") VND · @ContractPresentation.Status(refund.Status)</p>
+                <p>@refund.Reason</p>
+                @if(refund.ReconciledAtUtc.HasValue) { <small>Đối soát gần nhất: @refund.ReconciledAtUtc.Value.ToString("dd/MM/yyyy HH:mm") UTC</small> }
+                @if(Model.IsAdmin && refund.Status=="Queued")
+                {
+                    using(Html.BeginForm("ProcessQueuedRefund","Payments",new{id=refund.Id},FormMethod.Post,new{data_confirm="Gửi yêu cầu còn trong hàng đợi? Chỉ yêu cầu chưa được gửi mới được xử lý."}))
+                    { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Xử lý yêu cầu đang chờ</button> }
+                }
+                @if(Model.IsAdmin && (refund.Status=="Unknown" || refund.Status=="Processing"))
+                {
+                    using(Html.BeginForm("ReconcileRefund","Payments",new{id=refund.Id},FormMethod.Post))
+                    { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Truy vấn kết quả hoàn VNPay</button> }
+                    <p class="muted">Chỉ truy vấn kết quả. Phản hồi về thanh toán gốc chưa xác nhận được khoản hoàn.</p>
+                }
+            </article>
+        }
+    </section>
+}

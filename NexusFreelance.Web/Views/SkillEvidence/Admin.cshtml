@@ -1,0 +1,8 @@
+@model List<NexusFreelance.Web.Models.SkillEvidenceRequest>
+@using NexusFreelance.Web.Models
+@{ViewBag.Title="Duyệt minh chứng kỹ năng";var evidence=(List<SkillEvidence>)ViewBag.Evidence;}
+<div class="page-head"><h1>Duyệt minh chứng kỹ năng</h1><p>Kiểm tra đúng kỹ năng, người nộp và nguồn bằng chứng trước khi duyệt. Chỉ yêu cầu được duyệt và chưa hết hạn mới tạo dấu xác minh.</p></div>
+@if(!Model.Any()){<p class="empty">Không có yêu cầu đang chờ.</p>}
+@foreach(var r in Model){<section class="panel section-small"><h2>#@r.Id · @r.Claim.User.Name · @r.Claim.Skill.Title</h2><p>Mức @r.Claim.Level/5 · @r.Claim.YearsExperience năm</p>
+@foreach(var e in evidence.Where(e=>e.SkillEvidenceRequestId==r.Id)){<div class="panel"><strong>@e.Type</strong><p>@e.Issuer · Ngày cấp @(e.IssuedOn.HasValue?e.IssuedOn.Value.ToString("dd/MM/yyyy"):"—") · Hết hạn @(e.ExpiresOn.HasValue?e.ExpiresOn.Value.ToString("dd/MM/yyyy"):"—")</p>@if(e.Score.HasValue){<p>Điểm bài kiểm tra: @e.Score/100 · kết quả #@e.SkillExamAttemptId</p>}@if(!string.IsNullOrEmpty(e.Url)){<a href="@e.Url" target="_blank" rel="noopener noreferrer">Mở bằng chứng HTTPS ↗</a>}</div>}
+@using(Html.BeginForm("Review","SkillEvidence",new{id=r.Id},FormMethod.Post,new{data_confirm="Lưu quyết định xác minh kỹ năng này?"})){@Html.AntiForgeryToken()<label for="reason-@r.Id">Lý do (5–300 ký tự)</label><textarea id="reason-@r.Id" name="reason" minlength="5" maxlength="300" required></textarea><button class="btn btn-primary" name="approve" value="true" type="submit">Duyệt xác minh</button> <button class="btn btn-outline" name="approve" value="false" type="submit">Từ chối</button>}</section>}

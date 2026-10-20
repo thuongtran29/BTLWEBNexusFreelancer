@@ -1,0 +1,37 @@
+@{
+    ViewBag.Title = "Cách hoạt động";
+}
+<section class="journey-hero" aria-labelledby="journey-title">
+    <div>
+        <span class="eyebrow">BUILD TEAMS, NOT JUST CONTRACTS</span>
+        <h1 id="journey-title">Từ một ý tưởng đến <em>đội ngũ thực hiện.</em></h1>
+        <p>NexusFreelance kết nối Client với Freelancer theo năng lực và vai trò dự án. Mọi người cùng theo dõi công việc, bàn giao và đánh giá trong một quy trình.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="@Url.Action("Create", "Projects")">Bắt đầu một dự án ↗</a>
+            <a class="btn btn-ghost" href="@Url.Action("Index", "Home")">Khám phá việc làm →</a>
+        </div>
+    </div>
+    <div class="journey-outline" aria-label="Luồng nghiệp vụ chính">
+        <span>Ý tưởng</span><span aria-hidden="true">↓</span>
+        <span>Tìm người &amp; thống nhất hợp đồng</span><span aria-hidden="true">↓</span>
+        <span>Ký quỹ &amp; làm việc</span><span aria-hidden="true">↓</span>
+        <span>Bàn giao &amp; thanh toán</span>
+    </div>
+</section>
+<section class="section journey-section" aria-labelledby="journey-steps">
+    <div class="heading-row"><div><span class="eyebrow">QUY TRÌNH CỘNG TÁC</span><h2 id="journey-steps">Bốn chặng đường rõ ràng</h2></div></div>
+    <div class="journey-grid">
+        <article class="journey-step"><span class="journey-number">01</span><h3>Mô tả nhu cầu</h3><p>Client tạo dự án, thiết lập ngân sách và từng vị trí cần tuyển. AI Job Studio hiện hỗ trợ gợi ý bản nháp theo quy tắc để người dùng chỉnh sửa.</p></article>
+        <article class="journey-step"><span class="journey-number">02</span><h3>Tìm người &amp; thống nhất</h3><p>Freelancer giới thiệu chuyên môn, sản phẩm đã làm và gửi chào giá cá nhân hoặc theo nhóm. Mỗi đề xuất được Client chọn tạo một hợp đồng độc lập. Client và từng người thực hiện đọc, xác nhận đúng phiên bản điều khoản.</p></article>
+        <article class="journey-step"><span class="journey-number">03</span><h3>Ký quỹ &amp; làm việc</h3><p>Sau khi đủ xác nhận, Client bảo đảm tiền cho mốc công việc theo hợp đồng. Mở không gian làm việc của đúng hợp đồng để giao việc, trao đổi, theo dõi tiến độ và tài liệu.</p></article>
+        <article class="journey-step"><span class="journey-number">04</span><h3>Bàn giao &amp; thanh toán</h3><p>Người thực hiện nộp sản phẩm theo mốc. Client kiểm tra để yêu cầu chỉnh sửa hoặc nghiệm thu và giải ngân. Hai bên theo dõi dòng tiền trong Ví &amp; giao dịch, sau đó đánh giá kết quả hợp tác.</p></article>
+    </div>
+</section>
+<section class="panel journey-choice" aria-labelledby="journey-roles">
+    <div class="heading-row"><div><span class="eyebrow">CHỌN ĐIỂM BẮT ĐẦU</span><h2 id="journey-roles">Dành cho từng vai trò</h2></div></div>
+    <div class="journey-role-grid">
+        <div><h3>Tôi là Client</h3><p>Tạo dự án, xem chào giá, xác nhận hợp đồng, ký quỹ và nghiệm thu sản phẩm.</p><a class="btn btn-outline" href="@Url.Action("Create", "Projects")">Tạo dự án mới →</a></div>
+        <div><h3>Tôi là Freelancer</h3><p>Giới thiệu chuyên môn, chứng minh kỹ năng, ứng tuyển độc lập hoặc cùng nhóm và theo dõi đóng góp.</p><a class="btn btn-outline" href="@Url.Action("Index", "Home")">Tìm dự án phù hợp →</a></div>
+    </div>
+    <p class="muted journey-note">Các tính năng hỗ trợ AI hiện hoạt động theo quy tắc minh bạch; nền tảng chưa tuyên bố sử dụng mô hình AI bên ngoài khi chưa cấu hình dịch vụ.</p>
+</section>

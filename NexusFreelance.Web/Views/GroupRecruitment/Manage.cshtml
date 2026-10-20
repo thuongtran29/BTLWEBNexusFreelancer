@@ -1,0 +1,83 @@
+﻿@model NexusFreelance.Web.ViewModels.GroupStaffingPage
+@{ ViewBag.Title = "Bổ sung đội hình · " + Model.Group.Name; }
+<div class="page-head"><span class="eyebrow">NHÓM &amp; NHU CẦU DỰ ÁN</span><h1>Chuẩn bị đúng người cho dự án</h1><p>@Model.Group.Name · @Model.Project.Title</p></div>
+<section class="panel section-small">
+ <div class="heading-row"><h2>Nhu cầu còn thiếu của đội hình</h2><span class="pill">@Model.MemberCount thành viên · quy mô @(Model.Group.TargetSize.HasValue ? Model.Group.TargetSize.Value.ToString() : "chưa xác định")</span></div>
+ <p>@Model.AvailabilityNote</p><p class="form-help">Gợi ý hỗ trợ chuẩn bị đội hình trước khi gửi chào giá. Lời mời vào nhóm chưa thêm người vào hợp đồng; đội hình trong điều khoản đã ký giữ nguyên.</p>
+ <div class="toolbar">
+ @if (Model.Recruitment != null && Model.Recruitment.Status == "Open")
+ {
+  <form method="post" action="@Url.Action("Close", new { id = Model.Recruitment.Id })">@Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Đóng nhu cầu bổ sung</button></form>
+ }
+ else if (Model.CanRecruit)
+ {
+  <form method="post" action="@Url.Action("Open")">@Html.AntiForgeryToken()<input type="hidden" name="groupId" value="@Model.Group.Id"/><input type="hidden" name="projectId" value="@Model.Project.Id"/><button class="btn btn-primary" type="submit">Mở nhu cầu để Freelancer phù hợp nhìn thấy</button></form>
+ }
+ <a class="btn btn-outline" href="@Url.Action("Details", "Groups", new { id = Model.Group.Id })">Hồ sơ &amp; quy mô nhóm</a>
+ <a class="btn btn-outline" href="@Url.Action("Details", "Projects", new { id = Model.Project.Id })">Xem dự án</a>
+ @if (Model.Project.Status == "Published")
+ {
+  <a class="btn btn-outline" href="@Url.Action("Create", "GroupBids", new { groupId = Model.Group.Id, projectId = Model.Project.Id })">Lập đề xuất với đội hình đã xác nhận</a>
+ }
+ </div>
+</section>
+@foreach (var role in Model.Positions)
+{
+ <section class="panel section-small position-match">
+  <div class="heading-row"><h2>@role.Title</h2><span class="pill">Đã bao phủ @role.FilledCount/@role.RequiredCount · Chờ xác nhận @role.AwaitingCount · Thiếu @role.Remaining</span></div>
+  <div class="skill-chips">@foreach (var skill in role.Skills) { <span class="pill">@skill.Skill.Title · từ @skill.MinimumLevel/5</span> }</div>
+  @if (role.Remaining == 0)
+  {
+   <p>@(role.AwaitingCount>0?"Có lời mời đang chờ xác nhận cho vị trí này.":"Đã có thành viên có minh chứng phù hợp để phân vào vị trí này.")</p>
+  }
+  else if (role.Skills.Count == 0)
+  {
+   <p>Vị trí chưa có ánh xạ kỹ năng đủ cơ sở; trao đổi với Client để làm rõ yêu cầu.</p>
+  }
+  else
+  {
+   <p class="form-help">Ứng viên ngoài nhóm có minh chứng đáp ứng các mức trên; kết quả cập nhật theo nhu cầu và trạng thái hồ sơ.</p>
+   <div class="match-grid">
+   @foreach (var person in role.People)
+   {
+    <article class="match-card">
+     <div class="heading-row"><h3>@person.Name</h3><span class="match-percent">@person.Score<small>/100</small></span></div>
+     <p>@person.Subtitle</p><ul>@foreach (var reason in person.Reasons) { <li>@reason</li> }</ul>
+     <div class="form-actions">
+      <a class="btn btn-outline" href="@Url.Action("Freelancer", "Talent", new { id = person.Id })">Xem hồ sơ</a>
+      @if (Model.IsOpen)
+      {
+       <form method="post" action="@Url.Action("Invite", new { id = Model.Recruitment.Id })">@Html.AntiForgeryToken()<input type="hidden" name="userId" value="@person.Id"/><input type="hidden" name="roleId" value="@role.RoleId"/><button class="btn btn-primary" type="submit">Mời trao đổi &amp; vào nhóm</button></form>
+      }
+     </div>
+    </article>
+   }
+   </div>
+   if (!role.People.Any()) { <p class="empty">Chưa có ứng viên công khai đủ điều kiện cho vị trí này.</p> }
+  }
+ </section>
+}
+<section class="panel section-small">
+ <h2>Đề nghị từ Freelancer</h2><p class="form-help">Đồng ý sẽ gửi lời mời; Freelancer còn xác nhận tại Nhóm cộng tác trước khi trở thành thành viên.</p>
+ @if (!Model.Requests.Any()) { <p class="empty">Chưa có đề nghị tham gia cho nhu cầu này.</p> }
+ @foreach (var request in Model.Requests)
+ {
+  <article class="staff-request">
+   <div><h3>@request.Freelancer.Name · @request.Role.Title</h3><p class="description">@request.Pitch</p><p class="form-help">@NexusFreelance.Web.Services.DisplayTime.Vietnam(request.CreatedAtUtc) · @(request.Status == "Pending" ? "Chờ trưởng nhóm" : request.Status == "Invited" ? "Đã gửi lời mời" : "Đã từ chối/đóng nhu cầu")</p></div>
+   @if (request.Status == "Pending")
+   {
+    <form class="form-actions" method="post" action="@Url.Action("Decide", new { id = request.Id })">
+     @Html.AntiForgeryToken()
+     @if (Model.IsOpen) { <button class="btn btn-primary" type="submit" name="approve" value="true">Đồng ý &amp; gửi lời mời</button> }
+     <button class="btn btn-outline" type="submit" name="approve" value="false">Từ chối</button>
+    </form>
+   }
+  </article>
+ }
+</section>
+
+@if(Model.Recruitment!=null && Model.PendingInvitations.Any()){
+ <section class="panel section-small"><h2>Lời mời đang chờ xác nhận</h2><p>Lời mời chờ được tính khi gợi ý bổ sung để tránh mời quá nhu cầu. Bạn có thể hủy lời mời chưa được chấp nhận.</p>
+ @foreach(var invitation in Model.PendingInvitations){<div class="list-item"><strong>@invitation.Name</strong><form method="post" action="@Url.Action("CancelInvitation",new{id=Model.Recruitment.Id})" data-confirm="Hủy lời mời đang chờ xác nhận này?">@Html.AntiForgeryToken()<input type="hidden" name="userId" value="@invitation.UserId"/><button class="btn btn-outline" type="submit">Hủy lời mời chờ</button></form></div>}
+ </section>
+}

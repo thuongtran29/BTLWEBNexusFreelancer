@@ -1,0 +1,3 @@
+@model NexusFreelance.Web.Models.Proposal
+@if(Model.GroupBidId.HasValue){<p class="muted">Các mốc dưới đây là kế hoạch chung của cả nhóm; giá ở trên là phần giá chào của riêng bạn.</p>}
+@Html.Partial("_PlanSummary",Model.MilestonePlan??"")

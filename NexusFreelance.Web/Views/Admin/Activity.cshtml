@@ -1,0 +1,27 @@
+@using NexusFreelance.Web.Services
+@model NexusFreelance.Web.ViewModels.AdminAccessPage
+@{ ViewBag.Title = "Truy cập chức năng"; }
+<section class="page-header"><h1>Truy cập chức năng</h1><p>@Model.Total lượt mẫu trong 30 ngày gần nhất. Mỗi tài khoản/chức năng ghi tối đa một lượt mỗi 15 phút, tối đa 500 lượt mỗi tài khoản. Đây là lượt mở trang thành công, không chứng minh thời gian sử dụng hay hoàn thành thao tác.</p></section>
+<nav class="action-group" aria-label="Điều hướng quản trị"><a class="btn btn-outline" href="@Url.Action("Users")">Tra cứu tài khoản</a><a class="btn btn-outline" href="@Url.Action("Audit")">Nhật ký kiểm duyệt</a></nav>
+@using (Html.BeginForm("Activity", "Admin", FormMethod.Get, new { @class = "filter-toolbar" })) {
+    if (Model.UserId.HasValue) { <input type="hidden" name="userId" value="@Model.UserId" /> }
+    <div class="filter-field"><label for="access-q">Tên hoặc email</label><input id="access-q" name="q" type="search" maxlength="120" value="@Model.Query" /></div>
+    <div class="filter-field"><label for="access-controller">Nhóm chức năng (mã chính xác)</label><input id="access-controller" name="controllerFilter" maxlength="60" value="@Model.Controller" placeholder="Ví dụ: Projects" /></div>
+    <div class="filter-field"><label for="access-action">Chức năng (mã chính xác)</label><input id="access-action" name="actionFilter" maxlength="60" value="@Model.Action" placeholder="Ví dụ: Details" /></div>
+    <div class="filter-field"><label for="access-from">Từ ngày (UTC)</label><input id="access-from" name="from" type="date" value="@Model.From" /></div>
+    <div class="filter-field"><label for="access-to">Đến hết ngày (UTC)</label><input id="access-to" name="to" type="date" value="@Model.To" /></div>
+    <button class="btn btn-primary" type="submit">Lọc lượt truy cập</button><a class="btn btn-outline" href="@Url.Action("Activity")">Xóa bộ lọc</a>
+}
+@if (Model.UserId.HasValue) { <p>Tài khoản #@Model.UserId · <a href="@Url.Action("UserProfile", new { id = Model.UserId })">Xem hồ sơ</a></p> }
+@if (Model.Logs.Count == 0) { <section class="panel empty"><h2>Chưa có lượt mẫu phù hợp</h2><p>Dữ liệu chỉ xuất hiện sau khi bật ghi truy cập; hệ thống không khôi phục lịch sử trước đó.</p></section> }
+else {
+    <div class="panel table-panel"><div class="table-scroll" tabindex="0" role="region" aria-label="Bảng truy cập có thể cuộn ngang"><table class="data-table"><caption>Các lượt truy cập được lấy mẫu, thời gian UTC+7.</caption>
+        <thead><tr><th scope="col">Thời điểm (UTC+7)</th><th scope="col">Tài khoản</th><th scope="col">Chức năng</th><th scope="col">Mã lượt</th></tr></thead><tbody>
+        @foreach (var row in Model.Logs) { <tr><td><time datetime="@row.AccessedAtUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")">@DisplayTime.Vietnam(row.AccessedAtUtc)</time></td><td><a href="@Url.Action("UserProfile", new { id = row.UserAccountId })">@row.Name</a><small>@row.Email</small></td><td>@row.Controller / @row.Action</td><td>#@row.Id</td></tr> }
+        </tbody></table></div></div>
+}
+<nav class="pagination" aria-label="Phân trang lượt truy cập">
+    @if (Model.Page > 1) { <a href="@Url.Action("Activity", new { q = Model.Query, controllerFilter = Model.Controller, actionFilter = Model.Action, from = Model.From, to = Model.To, userId = Model.UserId, page = Model.Page - 1 })">← Trang trước</a> }
+    <span>Trang @Model.Page / @Model.PageCount</span>
+    @if (Model.Page < Model.PageCount) { <a href="@Url.Action("Activity", new { q = Model.Query, controllerFilter = Model.Controller, actionFilter = Model.Action, from = Model.From, to = Model.To, userId = Model.UserId, page = Model.Page + 1 })">Trang sau →</a> }
+</nav>

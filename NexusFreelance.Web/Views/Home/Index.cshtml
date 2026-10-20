@@ -1,0 +1,59 @@
+﻿@model IEnumerable<NexusFreelance.Web.Models.Project>
+@{ ViewBag.Title = "Khám phá dự án"; var currentPage = (int)ViewBag.Page; var total = (int)ViewBag.Total; }
+@if (!User.Identity.IsAuthenticated)
+{
+<section class="hero">
+    <div><span class="eyebrow">THE FUTURE OF COLLABORATIVE FREELANCING</span>
+        <h1>Ý tưởng lớn.<br /><em>Đội ngũ phù hợp.</em></h1>
+        <p>Biến công việc tự do thành những sản phẩm thực tế. Tìm đúng chuyên gia, tuyển đủ vai trò và cộng tác trong một Workspace.</p>
+        <div class="hero-actions"><a class="btn btn-primary" href="@Url.Action("Create", "Projects")">Đăng dự án ↗</a><a class="btn btn-ghost" href="#marketplace">Khám phá cơ hội ↓</a><a class="btn btn-ghost" href="@Url.Action("HowItWorks", "Home")">Tìm hiểu quy trình →</a></div>
+    </div>
+    <div class="hero-process"><small>TỪ Ý TƯỞNG ĐẾN BÀN GIAO</small><h2>Một nơi. Trọn quy trình.</h2>
+        <div class="process-step"><span>01</span><div><strong>Tìm đúng người</strong><small>Dự án, kỹ năng và vai trò phù hợp</small></div></div>
+        <div class="process-step"><span>02</span><div><strong>Thống nhất hợp đồng</strong><small>Hai bên xác nhận, ký quỹ rõ ràng</small></div></div>
+        <div class="process-step"><span>03</span><div><strong>Cộng tác &amp; bàn giao</strong><small>Theo dõi tiến độ trong workspace</small></div></div>
+    </div>
+</section>
+}
+<section class="section" id="marketplace">
+    <p class="muted" role="status" aria-live="polite" data-search-status></p>
+    <div class="heading-row marketplace-heading"><div><div class="eyebrow">KHÁM PHÁ CƠ HỘI</div>@if(User.Identity.IsAuthenticated) { <h1>Dự án đang tuyển thành viên</h1> } else { <h2>Dự án đang tuyển thành viên</h2> }</div><div class="result-count">@total dự án</div></div>
+    @using (Html.BeginForm("Index", "Home", FormMethod.Get, new { @class = "marketplace-search" }))
+    {
+        <div class="search-primary"><div><label for="q">Từ khóa</label>
+        <input id="q" name="q" value="@ViewBag.Query" maxlength="100" placeholder="Tên hoặc mô tả dự án..." /></div>
+        <div><label for="industry">Nhóm ngành</label><select id="industry" name="industry"><option value="">Tất cả nhóm ngành</option>@foreach (var i in NexusFreelance.Web.Services.IndustryCatalog.All) { <option value="@i" @((string)ViewBag.Industry == i ? "selected" : "")>@i</option> }</select></div>
+        <div><label for="type">Hình thức</label><select id="type" name="type"><option value="">Cá nhân và nhóm</option><option value="SOLO" @((string)ViewBag.Type == "SOLO" ? "selected" : "")>SOLO · Cá nhân</option><option value="TEAM" @((string)ViewBag.Type == "TEAM" ? "selected" : "")>TEAM · Nhóm</option><option value="ENTERPRISE" @((string)ViewBag.Type == "ENTERPRISE" ? "selected" : "")>Doanh nghiệp</option></select></div>
+        <button class="btn btn-primary" type="submit">Tìm dự án</button></div>
+        <details class="advanced-filters" @((ViewBag.MinBudget != null || ViewBag.MaxBudget != null || ViewBag.DeadlineFrom != null || ViewBag.DeadlineTo != null || ((string)ViewBag.Sort != "newest" && ViewBag.Sort != null)) ? "open" : "")>
+        <summary>@Html.Partial("_Icon", "chevron") Ngân sách, thời gian &amp; sắp xếp</summary><div class="advanced-filter-grid">
+        <div><label for="minBudget">Ngân sách từ (VND)</label><input id="minBudget" name="minBudget" type="number" min="0" step="1" value="@ViewBag.MinBudget" /></div>
+        <div><label for="maxBudget">Ngân sách đến (VND)</label><input id="maxBudget" name="maxBudget" type="number" min="0" step="1" value="@ViewBag.MaxBudget" /></div>
+        <div><label for="deadlineFrom">Hạn từ ngày</label><input id="deadlineFrom" name="deadlineFrom" type="date" value="@(ViewBag.DeadlineFrom == null ? "" : ((DateTime)ViewBag.DeadlineFrom).ToString("yyyy-MM-dd"))" /></div>
+        <div><label for="deadlineTo">Hạn đến ngày</label><input id="deadlineTo" name="deadlineTo" type="date" value="@(ViewBag.DeadlineTo == null ? "" : ((DateTime)ViewBag.DeadlineTo).ToString("yyyy-MM-dd"))" /></div>
+        <div><label for="sort">Sắp xếp</label><select id="sort" name="sort">@foreach (var pair in new[] { "newest|Mới nhất", "oldest|Cũ nhất", "az|Tên A → Z", "za|Tên Z → A", "budgetAsc|Ngân sách tăng dần", "budgetDesc|Ngân sách giảm dần", "deadline|Sắp đến hạn" }) { var parts = pair.Split('|'); <option value="@parts[0]" @((string)ViewBag.Sort == parts[0] ? "selected" : "")>@parts[1]</option> }</select></div>
+        </div></details><a class="filter-reset" href="@Url.Action("Index")#marketplace">Xóa bộ lọc</a>
+    }
+    @if (!Model.Any()) { <div class="empty">@Html.Partial("_Icon", "search")<strong>Chưa tìm thấy dự án phù hợp</strong><p>Thử mở rộng nhóm ngành, ngân sách hoặc thời gian để xem thêm cơ hội.</p></div> }
+    <div class="grid">
+        @foreach (var p in Model)
+        {
+            <article class="card">
+                <div class="card-meta"><span class="pill">@p.ProjectType · @p.Industry</span><span class="@(NexusFreelance.Web.Services.RecruitmentPolicy.DateAllowsApplications(p.DeadlineUtc,DateTime.UtcNow)?"status-dot":"pill")">@(NexusFreelance.Web.Services.RecruitmentPolicy.DateAllowsApplications(p.DeadlineUtc,DateTime.UtcNow)?"● Đang tuyển":"Đã quá hạn tuyển")</span></div>
+                <p class="project-posted"><time datetime="@((p.PublishedAtUtc ?? p.CreatedAtUtc).ToString("yyyy-MM-ddTHH:mm:ssZ"))">@(p.PublishedAtUtc.HasValue ? "Đăng lúc" : "Ngày tạo") @NexusFreelance.Web.Services.DisplayTime.Vietnam(p.PublishedAtUtc ?? p.CreatedAtUtc)</time></p>
+                <h3><a href="@Url.Action("Details", "Projects", new { id = p.Id })">@p.Title</a></h3>
+                <p>@(p.Description.Length > 170 ? p.Description.Substring(0, 170) + "…" : p.Description)</p>
+                <div class="card-bottom"><span>Ngân sách <strong>@p.Budget.ToString("N0") VND</strong></span><a href="@Url.Action("Details", "Projects", new { id = p.Id })">Xem chi tiết ↗</a></div>
+            </article>
+        }
+    </div>
+    @if (total > 10)
+    {
+        <div class="pagination">
+            @if (currentPage > 1) { <a href="@Url.Action("Index", new { q = ViewBag.Query, industry = ViewBag.Industry, type = ViewBag.Type, minBudget = ViewBag.MinBudget, maxBudget = ViewBag.MaxBudget, deadlineFrom = ViewBag.DeadlineFrom == null ? "" : ((DateTime)ViewBag.DeadlineFrom).ToString("yyyy-MM-dd"), deadlineTo = ViewBag.DeadlineTo == null ? "" : ((DateTime)ViewBag.DeadlineTo).ToString("yyyy-MM-dd"), sort = ViewBag.Sort, page = currentPage - 1 })">← Trước</a> }
+            <span>Trang @currentPage / @Math.Ceiling(total / 10.0)</span>
+            @if (currentPage * 10 < total) { <a href="@Url.Action("Index", new { q = ViewBag.Query, industry = ViewBag.Industry, type = ViewBag.Type, minBudget = ViewBag.MinBudget, maxBudget = ViewBag.MaxBudget, deadlineFrom = ViewBag.DeadlineFrom == null ? "" : ((DateTime)ViewBag.DeadlineFrom).ToString("yyyy-MM-dd"), deadlineTo = ViewBag.DeadlineTo == null ? "" : ((DateTime)ViewBag.DeadlineTo).ToString("yyyy-MM-dd"), sort = ViewBag.Sort, page = currentPage + 1 })">Tiếp →</a> }
+        </div>
+    }
+</section>
+@section scripts { <script src="@Url.Content("~/Content/marketplace.js")?v=20261020"></script> }

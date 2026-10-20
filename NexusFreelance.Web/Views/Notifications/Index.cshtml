@@ -1,0 +1,28 @@
+@model IEnumerable<NexusFreelance.Web.Models.UserNotification>
+@{ ViewBag.Title = "Thông báo"; var page = (int)ViewBag.Page; }
+<section class="page-head"><span class="eyebrow">NEXUSFREELANCE</span><h1>Thông báo của bạn</h1>
+    <p class="muted">Các hoạt động liên quan đến dự án và đề xuất của bạn.</p></section>
+<a class="btn btn-outline" data-notification-new href="@Url.Action("Index")" hidden>Có thông báo mới · Về trang đầu</a>
+<div class="toolbar" data-notification-toolbar><span class="pill">@ViewBag.UnreadCount chưa đọc</span>@using(Html.BeginForm("MarkAllRead", "Notifications", FormMethod.Post, new { data_ajax_mark_all = "true" })) { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Đánh dấu tất cả đã đọc</button> }</div>
+<section class="panel section-small notification-list" aria-label="Danh sách thông báo">
+@if (!Model.Any()) { <div class="empty">Bạn chưa có thông báo.</div> }
+@foreach (var item in Model)
+{
+    <article class="list-item notification-item @(!item.ReadAtUtc.HasValue ? "is-unread" : "")" data-notification-id="@item.Id">
+        <div><span class="eyebrow">@(item.Source ?? "Hệ thống · lịch sử")</span><h2>@item.Title</h2><div class="notification-meta"><p>Từ: @(item.Actor == null ? "Hệ thống NexusFreelance" : item.Actor.Name)@if(item.Project != null) { <span> · Dự án: @item.Project.Title</span> }</p><p><time datetime="@item.CreatedAtUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")">@item.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm") (UTC+7)</time> · <span data-notification-status>@(item.ReadAtUtc.HasValue ? "Đã đọc" : "Chưa đọc")</span></p></div><div class="notification-actions">
+            @using(Html.BeginForm("Open", "Notifications", new { id=item.Id }, FormMethod.Post)) { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Mở nội dung@(item.ReadAtUtc.HasValue ? "" : " & đánh dấu đã đọc")</button> }
+        </div></div>
+        @if (!item.ReadAtUtc.HasValue)
+        {
+            using (Html.BeginForm("MarkRead", "Notifications", new { id = item.Id }, FormMethod.Post, new { data_ajax_read = "true" }))
+            { @Html.AntiForgeryToken() <button type="submit" class="btn btn-outline">Đánh dấu đã đọc</button> }
+        }
+    </article>
+}
+</section>
+<div class="pagination" data-notification-paging>
+    @if (page > 1) { <a href="@Url.Action("Index", new { page = page - 1 })">← Trang trước</a> }
+    @if ((bool)ViewBag.HasNext) { <a href="@Url.Action("Index", new { page = page + 1 })">Trang sau →</a> }
+</div>
+
+<p id="notification-feedback" class="form-help" role="status" aria-live="polite"></p>

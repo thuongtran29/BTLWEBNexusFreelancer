@@ -1,0 +1,77 @@
+@model NexusFreelance.Web.ViewModels.JobEditForm
+@using NexusFreelance.Web.Models
+@{
+    var draft = (AIJobDraft)ViewBag.Draft;
+    var applied = draft.AppliedProjectId.HasValue;
+    ViewBag.Title = "Bản nháp #" + draft.Id;
+}
+<div class="page-head">
+    <span class="eyebrow">TRỢ LÝ JD / BẢN NHÁP CỦA BẠN</span>
+    <h1>Yêu cầu dự án #@draft.Id</h1>
+    <p>Phiên bản @ViewBag.VersionNumber · @draft.ProjectType · @draft.Budget.ToString("N0") VND</p>
+    <p>Nguồn bản này: @((string)ViewBag.Generator == "ClientEdited" ? "Khách hàng chỉnh sửa" : ((string)ViewBag.Generator ?? "").StartsWith("OpenAI-") ? "AI OpenAI" : ((string)ViewBag.Generator ?? "").StartsWith("Gemini-") ? "AI Gemini (Google)" : "Mẫu nội bộ theo quy tắc"). Luôn kiểm tra phạm vi, ngân sách và tiêu chí nghiệm thu trước khi sử dụng.</p>
+    @if((bool)ViewBag.ExternalAiRequested && (string)ViewBag.Generator == "RuleBasedDemo-v1") { <p class="alert info">Đây là mẫu dự phòng theo quy tắc được lưu trước đây, không phải JD do AI tạo và chưa dùng nội dung từ kho tri thức. Hãy tự bổ sung nội dung hoặc tạo yêu cầu AI mới.</p> }
+    @if(!string.IsNullOrEmpty((string)ViewBag.KnowledgeReferences)) { <p class="muted">Tri thức tham khảo: @ViewBag.KnowledgeReferences</p> }
+    <small>Mỗi lần lưu tạo một phiên bản mới để tra cứu. Hãy lưu các thay đổi trước khi tạo dự án nháp.</small>
+</div>
+<div class="toolbar">
+    <a class="btn btn-outline" href="@Url.Action("Index")">← Danh sách bản nháp</a>
+    @if(!applied) { using(Html.BeginForm("Delete", "JobStudio", new { id=draft.Id }, FormMethod.Post, new { @class="inline", data_confirm="Xóa bản nháp JD chưa sử dụng này khỏi danh sách?" })) { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Xóa bản nháp</button> } }
+    @if (applied)
+    {
+        <a class="btn btn-primary" href="@Url.Action("Manage", "Projects", new { id = draft.AppliedProjectId })">Quản lý dự án đã tạo →</a>
+    }
+</div>
+<section class="panel studio-form">
+@using (Html.BeginForm("Edit", "JobStudio", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    @Html.HiddenFor(m => m.ExpectedVersionId)
+    @Html.ValidationSummary(false, "", new { @class = "error-list" })
+    <fieldset disabled="@(applied ? "disabled" : null)">
+        <legend>Biên tập JD và vị trí tuyển dụng</legend>
+        <label for="Title">Tên dự án đề xuất</label>
+        @Html.TextBoxFor(m => m.Title, new { maxlength = "180", required = "required" })
+        <label for="Description">Bối cảnh và công việc cần thực hiện</label>
+        @Html.TextAreaFor(m => m.Description, new { rows = "5", maxlength = "4000", required = "required" })
+        <div class="studio-grid">
+            <div><label for="Objectives">Mục tiêu</label>@Html.TextAreaFor(m => m.Objectives, new { rows = "5", maxlength = "2000", required = "required" })</div>
+            <div><label for="Scope">Phạm vi</label>@Html.TextAreaFor(m => m.Scope, new { rows = "5", maxlength = "2000", required = "required" })</div>
+            <div><label for="UserStories">Tình huống sử dụng / phối hợp</label>@Html.TextAreaFor(m => m.UserStories, new { rows = "5", maxlength = "2000", required = "required" })</div>
+            <div><label for="RequiredSkills">Kỹ năng và trách nhiệm theo vị trí</label>@Html.TextAreaFor(m => m.RequiredSkills, new { rows = "5", maxlength = "1000", required = "required" })</div>
+            <div><label for="Deliverables">Sản phẩm bàn giao và tiêu chí nghiệm thu</label>@Html.TextAreaFor(m => m.Deliverables, new { rows = "5", maxlength = "2000", required = "required" })</div>
+            <div><label for="Milestones">Mốc bàn giao và điều kiện duyệt</label>@Html.TextAreaFor(m => m.Milestones, new { rows = "5", maxlength = "2000", required = "required" })</div>
+        </div>
+        <h2>Đề xuất vị trí tuyển dụng</h2>
+        <p class="muted">@(applied ? "Các vị trí đã chuyển sang dự án. Quản lý tuyển dụng tại trang dự án liên kết ở trên." : draft.ProjectType == "SOLO" ? "Dự án cá nhân tuyển một vị trí với một người. Có thể chỉnh tên vị trí; ghi trách nhiệm trong mục kỹ năng." : "Tối đa 6 vị trí, để trống dòng không dùng. Có thể chỉnh tên và số lượng; ghi trách nhiệm của từng vị trí trong mục kỹ năng.")</p>
+        <p class="form-help">Tổng nội dung JD kèm tiêu đề các mục phải nằm trong 4.000 ký tự để chuyển thành dự án. Kiểm tra các điểm “Cần xác nhận” và lưu bản chỉnh sửa trước khi tiếp tục.</p>
+        @for (var i = 0; i < Model.Roles.Count; i++)
+        {
+            <div class="studio-role">
+                <div><label for="Roles_@(i)__Title">Vị trí @(i + 1)</label>
+                    @Html.TextBoxFor(m => m.Roles[i].Title, new { maxlength = "100", placeholder = "Ví dụ: Backend Developer" })</div>
+                <div><label for="Roles_@(i)__RequiredCount">Số lượng</label>
+                    @Html.TextBoxFor(m => m.Roles[i].RequiredCount, new { type = "number", min = "1", max = "50" })</div>
+            </div>
+        }
+    </fieldset>
+    if (!applied)
+    {
+        <button type="submit" class="btn btn-dark">Lưu phiên bản chỉnh sửa</button>
+    }
+}
+@if (!applied)
+{
+    <div class="studio-apply">
+        <p>Chỉ khi Client xác nhận, hệ thống mới tạo một <strong>dự án nháp</strong> kèm vị trí tuyển dụng. Việc công bố dự án được thực hiện sau tại trang quản lý.</p>
+        @using (Html.BeginForm("Apply", "JobStudio", new { id = draft.Id }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-primary">Xác nhận &amp; tạo dự án nháp →</button>
+        }
+    </div>
+}
+</section>
+
+<section class="panel section-small"><h2>Ứng viên theo vị trí trong JD</h2><p>Gợi ý tự cập nhật theo phiên bản JD đã lưu. Đây là đối chiếu minh chứng hiện có; Client trao đổi và kiểm tra yêu cầu trước khi chọn người.</p>@Html.Partial("~/Views/Projects/_PositionMatches.cshtml", (System.Collections.Generic.List<NexusFreelance.Web.ViewModels.PositionRecommendation>)ViewBag.PositionPreview)</section>

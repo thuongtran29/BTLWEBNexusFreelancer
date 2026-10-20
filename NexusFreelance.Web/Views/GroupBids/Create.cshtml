@@ -1,0 +1,40 @@
+@model NexusFreelance.Web.ViewModels.GroupBidPage
+@using System.Linq
+@{ ViewBag.Title = "Đề xuất nhóm · " + Model.Project.Title; }
+<div class="page-head"><span class="eyebrow">GROUP PROPOSAL / TEAM BUILDER</span>
+    <h1>Đội hình @Model.Group.Name</h1>
+    <p>Ứng tuyển dự án <strong>@Model.Project.Title</strong> · @Model.Project.Budget.ToString("N0") VND</p>
+    <p>Toàn bộ thành viên đang hoạt động cùng tham gia đề xuất; mỗi người nhận một vai trò và một giá chào. Khách hàng xem cả đội hình, mốc chung và tỷ lệ trước khi chọn.</p>
+</div>
+<section class="panel section-small">
+    <h2>Phân vai và giá chào của cả đội</h2>
+    <form method="post" action="@Url.Action("Create", "GroupBids")" class="stack bid-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="FreelancerGroupId" value="@Model.Group.Id" />
+        <input type="hidden" name="ProjectId" value="@Model.Project.Id" />
+        @for (var i = 0; i < Model.Members.Count; i++)
+        {
+            var member = Model.Members[i];
+            <div class="group-candidate">
+                <div>
+                    <strong>@member.User.Name</strong><input type="hidden" name="Candidates[@i].Selected" value="true" />
+                    <input type="hidden" name="Candidates[@i].UserAccountId" value="@member.UserAccountId" />
+                </div>
+                <div>
+                    <label for="Role_@i">Vai trò ứng tuyển</label>
+                    <select id="Role_@i" name="Candidates[@i].RoleRequirementId">
+                        @foreach (var role in Model.Project.Requirements)
+                        { <option value="@role.Id">@role.Title (@role.RequiredCount vị trí)</option> }
+                    </select>
+                    <label for="Price_@i">Giá đề xuất cho thành viên (VND)</label>
+                    <input id="Price_@i" type="number" name="Candidates[@i].QuotedPrice" data-member-price min="1" max="999999999999" step="1" value="0" required />
+                </div>
+            </div>
+        }
+        <label for="Pitch">Lời giới thiệu và kế hoạch thực hiện</label>
+        <textarea name="Pitch" id="Pitch" maxlength="2500" rows="5" required></textarea>
+        <label for="DeliveryDays">Thời gian thực hiện (ngày)</label><input id="DeliveryDays" name="DeliveryDays" type="number" min="1" max="3650" value="14" required />
+        @Html.Partial("_MilestoneEditor",new NexusFreelance.Web.ViewModels.MilestoneEditor {Id="group-plan",IsGroup=true,TotalSelector="[data-member-price]",DeliverySelector="#DeliveryDays"})
+        <button type="submit" class="btn btn-primary">Gửi đề xuất của cả nhóm</button>
+    </form>
+</section>

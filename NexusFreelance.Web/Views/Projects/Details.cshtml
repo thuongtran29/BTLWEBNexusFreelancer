@@ -1,0 +1,84 @@
+﻿@using System.Linq
+@using NexusFreelance.Web.Models
+@model NexusFreelance.Web.Models.Project
+@{
+    ViewBag.Title = Model.Title;
+    var assignments = (ViewBag.Assignments as System.Collections.Generic.List<RoleAssignment>) ?? new System.Collections.Generic.List<RoleAssignment>();
+    var myApplications = (ViewBag.MyProposals as int[]) ?? new int[0];
+    var leaderGroups = (ViewBag.LeaderGroups as System.Collections.Generic.List<FreelancerGroup>) ?? new System.Collections.Generic.List<FreelancerGroup>();
+}
+<div class="page-head"><span class="eyebrow">DỰ ÁN / @NexusFreelance.Web.Services.WorkLabels.ProjectType(Model.ProjectType)</span><h1>@Model.Title</h1><p class="muted">Đăng bởi @Model.Client.Name · @NexusFreelance.Web.Services.ContractPresentation.Status(Model.Status)</p><p class="form-help">@(Model.PublishedAtUtc.HasValue ? "Đăng lúc:" : "Ngày tạo:") @NexusFreelance.Web.Services.DisplayTime.Vietnam(Model.PublishedAtUtc ?? Model.CreatedAtUtc)</p></div>
+@{ var coreSkills = (System.Collections.Generic.List<ProjectSkillRequirement>)ViewBag.ProjectCoreSkills; }
+@if((DateTime?)ViewBag.ProjectUpdatedAtUtc != null) { <p class="form-help">Cập nhật thông tin: @NexusFreelance.Web.Services.DisplayTime.Vietnam((DateTime)ViewBag.ProjectUpdatedAtUtc)</p> }
+@if((int?)ViewBag.CurrentUserId == Model.ClientId && (bool)ViewBag.CanEditProject) { <div class="toolbar"><a class="btn btn-primary" href="@Url.Action("Edit", new { id=Model.Id })">Cập nhật dự án</a><a class="btn btn-outline" href="@Url.Action("Manage", new { id=Model.Id })">Quản lý ứng viên &amp; hợp đồng</a></div> }
+@if(Model.Status == "Published" && !NexusFreelance.Web.Services.RecruitmentPolicy.DateAllowsApplications(Model.DeadlineUtc, DateTime.UtcNow)) { <p class="alert info" role="status">Dự án đã quá hạn dự kiến, hiện không nhận đề xuất mới. Đề xuất đã gửi vẫn được lưu để khách hàng xem xét.</p> }
+@if(Model.Status == "Paused" || Model.Status == "Cancelled") { <p class="alert info" role="status">@(Model.Status=="Paused"?"Dự án đang tạm dừng tuyển.":"Khách hàng đã hủy dự án.") Bạn đang xem lịch sử dự án đã có liên hệ với hồ sơ của mình.</p> }
+@if(coreSkills.Any()) { <section class="panel section-small"><h2>Core skill cần đáp ứng</h2><div class="skill-chips">@foreach(var skill in coreSkills) { <span class="pill">@skill.Skill.Title · từ @skill.MinimumLevel/5 · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(skill.MinimumLevel)</span> }</div><p class="form-help">Đây là yêu cầu ghép nối của dự án. Khi ứng tuyển, hãy nêu rõ bằng chứng kỹ năng và phạm vi bạn có thể đảm nhận.</p></section> }
+@if ((string)ViewBag.CurrentRole == "Freelancer" && Model.ProjectType == "TEAM" && Model.Status == "Published" && !leaderGroups.Any())
+{
+    <section class="panel section-small contract-callout"><p><strong>Dự án này nhận đề xuất theo nhóm.</strong><br />Trưởng nhóm sẽ phân vai và gửi đề xuất chung. Tạo nhóm hoặc cùng trưởng nhóm hiện tại chuẩn bị đội hình trước khi ứng tuyển.</p><a class="btn btn-outline" href="@Url.Action("Index", "Groups")">Quản lý nhóm của tôi →</a></section>
+}
+@if((string)ViewBag.CurrentRole=="Freelancer" && Model.ProjectType!="SOLO" && (bool)ViewBag.RecruitmentOpen){@Html.Partial("_GroupOpportunities",(System.Collections.Generic.List<NexusFreelance.Web.ViewModels.GroupOpportunity>)ViewBag.GroupOpportunities)}
+<div class="two-col">
+    <section class="panel"><h2>Mô tả dự án</h2><div class="description" data-project-description>@Model.Description</div><hr /><h2>Vị trí tuyển dụng</h2>
+        @if (!Model.Requirements.Any()) { <p class="muted">Chưa có vị trí.</p> }
+        @foreach (var r in Model.Requirements)
+        {
+            var hired = assignments.Count(a => a.RoleRequirementId == r.Id);
+            <div class="role-block"><div class="heading-row"><h3>@r.Title</h3><span class="pill">Đã tuyển @hired / @r.RequiredCount</span></div>
+            @if ((bool)ViewBag.CanApply && Model.Status == "Published" && hired < r.RequiredCount && !myApplications.Contains(r.Id))
+            {
+                <form method="post" action="@Url.Action("Apply", "Proposals")" class="stack">
+                    @Html.AntiForgeryToken()<input type="hidden" name="ProjectId" value="@Model.Id"/><input type="hidden" name="RoleRequirementId" value="@r.Id" />
+                    <label for="Pitch_@r.Id">Lời giới thiệu / kinh nghiệm</label><textarea id="Pitch_@r.Id" name="Pitch" rows="3" maxlength="2500" required placeholder="Tôi có kinh nghiệm phù hợp với vai trò này..." ></textarea>
+                    <label for="QuotedPrice_@r.Id">Giá đề xuất (VND)</label><input id="QuotedPrice_@r.Id" name="QuotedPrice" type="number" min="1" step="1" required />
+                    <label for="DeliveryDays_@r.Id">Thời gian thực hiện (ngày)</label><input id="DeliveryDays_@r.Id" name="DeliveryDays" type="number" min="1" max="3650" value="14" required />
+                    @Html.Partial("_MilestoneEditor",new NexusFreelance.Web.ViewModels.MilestoneEditor {Id="proposal-plan-"+r.Id,TotalSelector="#QuotedPrice_"+r.Id,DeliverySelector="#DeliveryDays_"+r.Id})
+                    <button class="btn btn-primary" type="submit">Gửi đề xuất ứng tuyển →</button>
+                </form>
+            }
+            else if (myApplications.Contains(r.Id)) { <p class="muted">Bạn đã gửi đề xuất cho vị trí này (kể cả đề xuất đã rút). Xem lịch sử tại Theo dõi ứng tuyển.</p> }
+            </div>
+        }
+    </section>
+    <aside class="panel sidebar-panel"><div class="eyebrow">PROJECT SNAPSHOT</div><h2>@Model.Budget.ToString("N0") <small>VND</small></h2>
+        <div class="detail-line"><span>Loại dự án</span><strong>@NexusFreelance.Web.Services.WorkLabels.ProjectType(Model.ProjectType)</strong></div>
+        <div class="detail-line"><span>Hạn dự kiến</span><strong>@(Model.DeadlineUtc.HasValue ? Model.DeadlineUtc.Value.ToString("dd/MM/yyyy") : "Thỏa thuận")</strong></div>
+        <div class="detail-line"><span>Vị trí</span><strong>@Model.Requirements.Count</strong></div>
+        @if ((string)ViewBag.CurrentRole == "Client" && (int)ViewBag.CurrentUserId == Model.ClientId) { <p><a class="btn btn-outline full" href="@Url.Action("Manage", "Projects", new { id = Model.Id })">Quản lý dự án →</a></p> }
+        @if ((bool)ViewBag.CanEnterWorkspace) { <p><a class="btn btn-primary full" href="@Url.Action("Index", "Workspace", new { id = (int)ViewBag.WorkspaceId })">Vào Workspace ↗</a></p> }
+        else if (!User.Identity.IsAuthenticated) { <a class="btn btn-primary full" href="@Url.Action("Register", "Account")">Đăng ký để ứng tuyển</a> }
+    </aside>
+</div>
+@if (User.Identity.IsAuthenticated && ((string)ViewBag.CurrentRole == "Client" || (string)ViewBag.CurrentRole == "Freelancer")
+    && (int)ViewBag.CurrentUserId != Model.ClientId &&
+    (Model.Status == "Published" || Model.Status == "InProgress" || Model.Status == "Completed"))
+{
+    <details class="panel section-small report-panel">
+        <summary>Báo cáo nội dung dự án không phù hợp</summary>
+        <p class="muted">Báo cáo được gửi riêng cho quản trị viên; mỗi người chỉ có một báo cáo đang chờ đối với mỗi dự án.</p>
+        <form method="post" action="@Url.Action("Submit", "Reports")" class="stack">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ProjectId" value="@Model.Id" />
+            <label for="report-category">Loại vi phạm</label>
+            <select id="report-category" name="Category" required>
+                <option value="Fraud">Lừa đảo / thông tin sai lệch</option>
+                <option value="Spam">Spam / quảng cáo</option>
+                <option value="Abuse">Ngôn từ / hành vi không phù hợp</option>
+                <option value="Other">Khác</option>
+            </select>
+            <label for="report-details">Mô tả và bằng chứng</label>
+            <textarea id="report-details" name="Details" rows="4" minlength="15" maxlength="2000" required></textarea>
+            <button type="submit" class="btn btn-outline">Gửi báo cáo</button>
+        </form>
+    </details>
+}
+@if (leaderGroups.Any() && Model.Status == "Published")
+{
+    <section class="panel section-small"><h2>Ứng tuyển theo đội nhóm</h2>
+        <p class="muted">Leader có thể phân vai cho các thành viên đã chấp nhận lời mời và gửi Proposal theo đội hình.</p>
+        @foreach (var group in leaderGroups)
+        { <div class="toolbar"><a class="btn btn-primary" href="@Url.Action("Manage","GroupRecruitment",new{groupId=group.Id,projectId=Model.Id})">Xem vị trí thiếu &amp; bổ sung: @group.Name</a><a class="btn btn-outline" href="@Url.Action("Create", "GroupBids", new { groupId = group.Id, projectId = Model.Id })">Lập đề xuất nhóm →</a></div> }
+    </section>
+}
+

@@ -1,0 +1,27 @@
+@model NexusFreelance.Web.ViewModels.AssessmentCatalogPage
+@using NexusFreelance.Web.Services
+@using System.Linq
+@{ ViewBag.Title = "Đánh giá & chứng chỉ chuyên môn"; }
+<div class="page-head assessment-heading">
+    <div><span class="eyebrow">PHÁT TRIỂN NĂNG LỰC</span><h1>Đánh giá &amp; chứng chỉ</h1><p>Tìm lộ trình phù hợp, làm bài tại đơn vị tổ chức và bổ sung minh chứng vào hồ sơ nghề nghiệp.</p></div>
+    @if (!User.Identity.IsAuthenticated || (string)ViewBag.CurrentRole == "Freelancer") { <a class="btn btn-outline" href="@Url.Action("Index", "Skills")">Bài kiểm tra nội bộ →</a> }
+</div>
+<ol class="assessment-steps" aria-label="Quy trình xác minh chứng chỉ"><li><strong>01</strong><span>Chọn lĩnh vực và nguồn đánh giá</span></li><li><strong>02</strong><span>Học và làm bài trên trang chính thức</span></li><li><strong>03</strong><span>Gửi chứng chỉ đã được cấp để xác minh</span></li></ol>
+<form method="get" class="assessment-filters panel" action="@Url.Action("Index")">
+    <div><label for="assessment-query">Từ khóa, vai trò</label><input id="assessment-query" name="q" value="@Model.Query" maxlength="120" type="search" placeholder="Azure, Data Analyst, marketing…" /></div>
+    <div><label for="assessment-industry">Nhóm ngành</label><select id="assessment-industry" name="industry"><option value="">Tất cả nhóm ngành</option>@foreach(var item in IndustryCatalog.All) { <option value="@item" selected="@(Model.Industry == item ? "selected" : null)">@item</option> }</select></div>
+    <div><label for="assessment-provider">Đơn vị tổ chức</label><select id="assessment-provider" name="provider"><option value="">Tất cả đơn vị</option>@foreach(var item in AssessmentCatalog.All.Select(x => x.Provider).Distinct()) { <option value="@item" selected="@(Model.Provider == item ? "selected" : null)">@item</option> }</select></div>
+    <button class="btn btn-primary" type="submit">Lọc nguồn</button>
+</form>
+<div class="heading-row section-small"><h2>Nguồn đánh giá chính thức</h2><span class="pill">@Model.Resources.Count kết quả</span></div>
+@if (!Model.Resources.Any()) { <div class="panel empty" role="status"><h3>Chưa có nguồn phù hợp</h3><p>Thử từ khóa khác hoặc mở rộng nhóm ngành.</p><a class="btn btn-outline" href="@Url.Action("Index")">Xóa bộ lọc</a></div> }
+<div class="assessment-list">
+@foreach(var item in Model.Resources) {
+    <article class="assessment-resource panel" data-resource="@item.Id">
+        <div class="provider-monogram" aria-hidden="true">@(item.Provider == "Microsoft Learn" ? "MS" : item.Provider == "AWS" ? "aws" : item.Provider == "Scrum.org" ? "S" : "H")</div>
+        <div class="assessment-copy"><div class="assessment-meta"><span>@item.Provider</span><span>· @item.Level</span></div><h3>@item.Title</h3><p>@item.Summary</p><span class="pill">@item.Industry</span><p class="muted assessment-note">@item.Note</p><a class="source-link" href="@item.SourceUrl" target="_blank" rel="noopener noreferrer">Nguồn: @(new System.Uri(item.SourceUrl).Host) ↗</a></div>
+        <div class="assessment-actions"><a class="btn btn-primary" href="@item.AssessmentUrl" target="_blank" rel="noopener noreferrer">Mở trang đánh giá ↗</a>@if(item.CredentialName != null) { if (!User.Identity.IsAuthenticated || (string)ViewBag.CurrentRole == "Freelancer") { <a class="btn btn-outline" href="@Url.Action("Certifications", "Skills", new { resource=item.Id })">Tôi đã có chứng chỉ</a> } else { <small>Gửi minh chứng từ hồ sơ Freelancer.</small> } }<small>Đối chiếu nguồn <time datetime="@AssessmentCatalog.ReviewedOn">16/10/2026</time></small></div>
+    </article>
+}
+</div>
+<p class="assessment-disclosure">Danh mục lưu thông tin tham chiếu và liên kết nguồn. Câu hỏi, đăng ký thi và kết quả do đơn vị tổ chức quản lý; NexusFreelance chưa đồng bộ điểm hoặc tự cấp chứng chỉ của các tổ chức này.</p>

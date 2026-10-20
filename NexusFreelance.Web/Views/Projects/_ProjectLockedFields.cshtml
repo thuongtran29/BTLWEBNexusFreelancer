@@ -1,0 +1,9 @@
+@model NexusFreelance.Web.Models.Project
+@{ var skills = (System.Collections.Generic.List<NexusFreelance.Web.Models.ProjectSkillRequirement>)ViewBag.FixedSkills; }
+<div class="section-small"><h2>Thông tin hiện tại</h2><p>@Model.Industry · @NexusFreelance.Web.Services.WorkLabels.ProjectType(Model.ProjectType) · @Model.Budget.ToString("N0") VND</p><p>Hạn dự kiến: @(Model.DeadlineUtc.HasValue ? Model.DeadlineUtc.Value.ToString("dd/MM/yyyy") : "Chưa xác định")</p></div>
+<input type="hidden" name="Industry" value="@Model.Industry" />
+<input type="hidden" name="ProjectType" value="@Model.ProjectType" />
+<input type="hidden" name="Budget" value="@Model.Budget.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" />
+<input type="hidden" name="Deadline" value="@(Model.DeadlineUtc.HasValue ? Model.DeadlineUtc.Value.ToString("yyyy-MM-dd") : "")" />
+@foreach(var skill in skills) { <input type="hidden" name="SkillIds" value="@skill.SkillTrackId" /> }
+<input type="hidden" name="MinimumSkillLevel" value="@(skills.Select(s => (int?)s.MinimumLevel).Min() ?? 1)" />

@@ -1,0 +1,16 @@
+<section class="panel avatar-settings section-small" aria-labelledby="avatar-heading">
+    <div><h2 id="avatar-heading">Ảnh đại diện</h2><p class="muted">Bấm vào ảnh để chọn hoặc thay ảnh. Ảnh mới được dùng đồng nhất trên hồ sơ và các trang làm việc.</p></div>
+    @using(Html.BeginForm("Upload", "ProfileImage", FormMethod.Post, new { enctype="multipart/form-data", @class="avatar-picker", data_avatar_picker="true" })) {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="returnUrl" value="@Request.RawUrl" />
+        <button class="avatar-picker-trigger" type="button" data-avatar-select aria-label="Chọn ảnh đại diện PNG hoặc JPEG" aria-describedby="avatar-help">
+            @Html.Partial("_Avatar", new NexusFreelance.Web.ViewModels.AvatarView { Id=(int)ViewBag.CurrentUserId, Name=(string)ViewBag.CurrentName, Size="large" })
+            <span class="avatar-edit-mark" aria-hidden="true">+</span>
+        </button>
+        <label class="sr-only" for="avatar-file">Ảnh đại diện</label><input id="avatar-file" class="avatar-file" type="file" name="image" accept="image/png,image/jpeg" required />
+        <div class="avatar-review" hidden><p>Kiểm tra ảnh đã chọn trước khi lưu.</p><div class="form-actions"><button class="btn btn-primary" type="submit">Dùng ảnh này</button><button class="btn btn-outline" type="button" data-avatar-cancel>Hủy thay đổi</button></div></div>
+        <p id="avatar-help" class="form-help">PNG/JPEG tối đa 2 MB, 4096 × 4096 pixel. Ảnh được chuẩn hóa để bảo vệ thông tin trong tệp gốc.</p>
+        <p class="avatar-feedback form-help" role="status" aria-live="polite"></p>
+        <noscript><style>.avatar-file{display:block!important}.avatar-picker-trigger{display:none}.avatar-review[hidden]{display:block!important}</style></noscript>
+    }
+</section>

@@ -1,0 +1,43 @@
+@model System.Collections.Generic.List<NexusFreelance.Web.Models.DirectConversation>
+@using NexusFreelance.Web.ViewModels
+@{
+    ViewBag.Title = "Hội thoại";
+    var suggestions = (System.Collections.Generic.List<NexusFreelance.Web.Services.ConversationSuggestion>)ViewBag.Suggestions;
+    var latest = (System.Collections.Generic.Dictionary<int, NexusFreelance.Web.Models.DirectMessage>)ViewBag.LatestMessages;
+}
+<div class="page-head"><span class="eyebrow">KẾT NỐI KHÁCH HÀNG &amp; ĐỒNG NGHIỆP</span><h1>Hội thoại của bạn</h1><p>Trao đổi với khách hàng và đồng nghiệp trong nhóm. Điều khoản và thanh toán chỉ có hiệu lực khi được xác nhận trong hợp đồng.</p></div>
+<section class="panel section-small" aria-labelledby="conversations-heading" data-realtime-conversations>
+    <h2 id="conversations-heading">Hội thoại đã mở</h2>
+    @if (!Model.Any()) { <p class="empty">Chưa có cuộc trò chuyện. Chọn một gợi ý bên dưới để bắt đầu. Khách hàng có thể mở hồ sơ công khai của freelancer và bấm Liên hệ.</p> }
+    @foreach (var thread in Model)
+    {
+        var peer = thread.ClientId == (int)ViewBag.CurrentUserId ? thread.Freelancer : thread.Client;
+        <div class="list-item">
+            <div class="heading-row">@Html.Partial("_Avatar", new AvatarView { Id = peer.Id, Name = peer.Name, Size = "medium" })<div><h3>@peer.Name</h3><p class="muted">@(peer.Role == "Client" ? "Khách hàng" : "Freelancer") · Bắt đầu @thread.CreatedAtUtc.ToString("dd/MM/yyyy")</p>
+            @if (latest.ContainsKey(thread.Id)) { var message = latest[thread.Id]; <p>@(message.SenderId == (int)ViewBag.CurrentUserId ? "Bạn: " : "")@(message.Body.Length > 120 ? message.Body.Substring(0, 120) + "…" : message.Body)</p><small class="muted">@NexusFreelance.Web.Services.DisplayTime.Vietnam(message.CreatedAtUtc)</small> }
+            else { <p class="muted">Chưa có tin nhắn · Gửi lời chào để bắt đầu.</p> }
+            </div></div>
+            <a class="btn btn-outline" href="@Url.Action("Thread", new { id = thread.Id })" aria-label="Mở hội thoại với @peer.Name">Mở hội thoại</a>
+        </div>
+    }
+</section>
+@if ((string)ViewBag.CurrentRole == "Freelancer")
+{
+    <section class="panel section-small" aria-labelledby="suggestions-heading">
+        <h2 id="suggestions-heading">Gợi ý trò chuyện</h2>
+        <p class="muted">Đồng nghiệp đang cùng nhóm và khách hàng từ dự án hoặc hợp đồng bạn tham gia. Hội thoại đã mở nằm trong danh sách phía trên.</p>
+        @if (!suggestions.Any()) { <p class="empty">Chưa có liên hệ mới phù hợp. Gợi ý sẽ xuất hiện khi bạn cùng tham gia nhóm hoặc có dự án với khách hàng.</p> }
+        @foreach (var person in suggestions)
+        {
+            <div class="list-item">
+                <div class="heading-row">@Html.Partial("_Avatar", new AvatarView { Id = person.UserId, Name = person.Name, Size = "medium" })<div><h3>@person.Name</h3><p class="muted">@(person.Role == "Client" ? "Khách hàng · Có dự án hoặc hợp đồng chung" : "Freelancer · Đồng nghiệp cùng nhóm")</p></div></div>
+                @using (Html.BeginForm("Start", "Messages", FormMethod.Post, new { @class = "inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="recipientId" value="@person.UserId" />
+                    <button class="btn btn-primary" type="submit" aria-label="Trò chuyện với @person.Name">Trò chuyện</button>
+                }
+            </div>
+        }
+    </section>
+}

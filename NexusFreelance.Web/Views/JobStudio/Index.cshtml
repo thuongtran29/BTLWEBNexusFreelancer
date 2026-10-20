@@ -1,0 +1,20 @@
+@model IEnumerable<NexusFreelance.Web.Models.AIJobDraft>
+@{ ViewBag.Title = "Bản nháp JD"; }
+<div class="page-head">
+    <span class="eyebrow">CLIENT / JOB STUDIO</span>
+    <div class="heading-row"><h1>Job Studio</h1><a class="btn btn-primary" href="@Url.Action("New")">+ Nhập ý tưởng</a></div>
+    <p>Luôn có chế độ demo theo quy tắc. Khi AI bên ngoài được cấu hình, Client phải tự chọn đồng ý trước mỗi lần gửi ý tưởng. Mọi bản nháp đều cần kiểm tra và chỉnh sửa.</p>
+</div>
+@if (!Model.Any()) { <div class="empty">Chưa có bản nháp. <a href="@Url.Action("New")">Tạo bản đầu tiên →</a></div> }
+@foreach (var draft in Model)
+{
+    <div class="list-item">
+        <div><span class="pill">@(draft.AppliedProjectId.HasValue ? "Đã chuyển dự án" : "Đang chỉnh sửa")</span>
+            <h3><a href="@Url.Action("Edit", new { id = draft.Id })">Ý tưởng #@draft.Id</a></h3>
+            <p class="description">@draft.Idea</p>
+            <small>@draft.ProjectType · @draft.Budget.ToString("N0") VND · @draft.CreatedAtUtc.ToString("dd/MM/yyyy")</small>
+        </div>
+        @if(!draft.AppliedProjectId.HasValue) { using(Html.BeginForm("Delete", "JobStudio", new { id = draft.Id }, FormMethod.Post, new { data_confirm="Xóa bản nháp JD này khỏi danh sách?", @class="inline" })) { @Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Xóa bản nháp</button> } }
+        <a class="btn btn-outline" href="@Url.Action("Edit", new { id = draft.Id })">@(draft.AppliedProjectId.HasValue ? "Xem lại" : "Chỉnh sửa") →</a>
+    </div>
+}

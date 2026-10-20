@@ -1,0 +1,3 @@
+@{int parsedId;int? id=int.TryParse(Convert.ToString(ViewContext.RouteData.Values["id"]),out parsedId)?parsedId:(int?)null;
+var back=NexusFreelance.Web.Services.PageNavigation.Back(Convert.ToString(ViewContext.RouteData.Values["controller"]),Convert.ToString(ViewContext.RouteData.Values["action"]),(string)ViewBag.CurrentRole,ViewData.Model,id);}
+@if(back!=null){<nav class="page-back" aria-label="Quay lại trang trước"><a href="@Url.Content(back.Path)" data-page-back>@Html.Partial("_Icon","chevron")<span>Quay lại</span><small>@back.Label</small></a></nav>}

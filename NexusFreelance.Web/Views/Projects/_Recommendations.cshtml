@@ -1,0 +1,21 @@
+@model NexusFreelance.Web.ViewModels.SkillMatchPage
+<section class="panel section-small" id="smart-matching">
+    <span class="eyebrow">GHÉP NỐI THÔNG MINH</span><h2>Gợi ý freelancer &amp; nhóm</h2>
+    <p>Đối chiếu kỹ năng đã xác minh, mức thành thạo, vai trò chính/phụ đã chọn từ minh chứng còn hiệu lực, ngành nghề, ngân sách tối thiểu và trạng thái nhận việc. Chức danh tự giới thiệu không cộng điểm vai trò. Minh chứng hết hạn hoặc bị thu hồi không dùng cho gợi ý hiện tại. Điểm gợi ý không thay thế việc trao đổi và đánh giá hồ sơ.</p>
+    <div class="skill-chips">@foreach(var skill in Model.Skills) { <span class="pill">@skill.Skill.Title · từ mức @skill.MinimumLevel/5</span> }</div>
+    @if ((bool?)ViewBag.CanEditProject != false) {
+    <details class="prompt-template"><summary>Khai báo / cập nhật core skill để ghép nối</summary>
+    @using(Html.BeginForm("UpdateSkills", "Projects", new { id=Model.Project.Id }, FormMethod.Post)) {
+        @Html.AntiForgeryToken()
+        <p class="form-help">Dùng để gợi ý người mới trong giai đoạn tuyển. Nếu đổi phạm vi của hợp đồng đã ký, cần tạo phiên bản điều khoản để các bên xác nhận.</p>
+        <div class="skill-options">@foreach(var track in (System.Collections.Generic.List<NexusFreelance.Web.Models.SkillTrack>)ViewBag.SkillOptions) { <label><input type="checkbox" name="skillIds" value="@track.Id" checked="@(Model.Skills.Any(s => s.SkillTrackId==track.Id) ? "checked" : null)" /><span>@track.Title</span></label> }</div>
+        <label for="MatchMinimumLevel">Mức tối thiểu</label><select id="MatchMinimumLevel" name="minimumSkillLevel">@for(var level=1;level<=5;level++) { <option value="@level" selected="@(level==(Model.Skills.Count==0 ? 1 : Model.Skills.Min(s => s.MinimumLevel)) ? "selected" : null)">@level/5 · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(level)</option> }</select>
+        <button class="btn btn-primary" type="submit">Lưu core skill &amp; cập nhật gợi ý</button>
+    }
+    </details>
+    }
+    @if(Model.Skills.Count == 0) { <p class="alert info">Dự án chưa có kỹ năng cụ thể. Gợi ý hiện chỉ đối chiếu vai trò chính/phụ đã xác minh còn hiệu lực và nhóm ngành; chưa đủ cơ sở đánh giá năng lực.</p> }
+    <h3>Ứng viên phù hợp từng vị trí</h3><p class="form-help">Kỹ năng được ánh xạ từ tên vị trí và danh mục hiện có; Client kiểm tra, chỉnh yêu cầu trước khi công bố. Mỗi vị trí hiển thị số còn thiếu và bằng chứng riêng.</p>@Html.Partial("_PositionMatches", Model.Positions)
+    @if(!Model.Positions.Any() && Model.People.Any()) { <h3>Gợi ý sơ bộ theo kỹ năng dự án</h3><p class="form-help">Thêm vị trí cần tuyển để xem ứng viên theo từng công việc và mức yêu cầu cụ thể.</p>@Html.Partial("_MatchCards", Model.People) }
+    @if(Model.Project.ProjectType != "SOLO") { <h3>Nhóm chuyên môn</h3>@Html.Partial("_MatchCards", Model.Groups) }
+</section>

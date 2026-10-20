@@ -1,0 +1,71 @@
+@model NexusFreelance.Web.ViewModels.MyCertificationsPage
+@using System
+@using System.Linq
+@using NexusFreelance.Web.Services
+@{ ViewBag.Title = "Chứng chỉ của tôi"; }
+<section class="page-head">
+    <span class="eyebrow">SKILL VERIFICATION</span>
+    <h1>Chứng chỉ bên ngoài</h1>
+    <p>Gửi minh chứng HTTPS để quản trị viên xác minh. Chứng chỉ do bạn khai báo sẽ ở trạng thái chờ cho đến khi được duyệt.</p>
+    <a class="btn btn-outline" href="@Url.Action("Index", "Assessments")">Tìm nguồn thi và chứng chỉ chính thức →</a>
+</section>
+<section class="panel section-small">
+    <h2>Gửi chứng chỉ mới</h2>
+    @using (Html.BeginForm("SubmitCertification", "Skills", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(false, "Vui lòng kiểm tra thông tin:", new { @class = "alert danger" })
+        <div class="form-group">
+            <label for="cert-name">Tên chứng chỉ</label>
+            @Html.TextBox("Name", Model.NewCertificate.Name, new { id = "cert-name", required = "required", maxlength = 180, placeholder = "Ví dụ: Microsoft Azure Fundamentals" })
+            @Html.ValidationMessage("Name")
+        </div>
+        <div class="form-group">
+            <label for="cert-issuer">Tổ chức cấp</label>
+            @Html.TextBox("Issuer", Model.NewCertificate.Issuer, new { id = "cert-issuer", required = "required", maxlength = 160 })
+            @Html.ValidationMessage("Issuer")
+        </div>
+        <div class="form-group">
+            <label for="cert-url">Đường dẫn minh chứng HTTPS</label>
+            @Html.TextBox("EvidenceUrl", Model.NewCertificate.EvidenceUrl, new { id = "cert-url", type = "url", required = "required", maxlength = 1000, placeholder = "https://..." })
+            @Html.ValidationMessage("EvidenceUrl")
+        </div>
+        <div class="form-group">
+            <label for="cert-issued">Ngày cấp</label>
+            @Html.TextBox("IssuedOn", Model.NewCertificate.IssuedOn.HasValue ? Model.NewCertificate.IssuedOn.Value.ToString("yyyy-MM-dd") : "", new { id = "cert-issued", type = "date", required = "required" })
+            @Html.ValidationMessage("IssuedOn")
+        </div>
+        <div class="form-group">
+            <label for="cert-expiry">Ngày hết hạn (nếu có)</label>
+            @Html.TextBox("ExpiresOn", Model.NewCertificate.ExpiresOn.HasValue ? Model.NewCertificate.ExpiresOn.Value.ToString("yyyy-MM-dd") : "", new { id = "cert-expiry", type = "date" })
+            @Html.ValidationMessage("ExpiresOn")
+        </div>
+        <label for="CertSkill">Kỹ năng liên quan</label><select id="CertSkill" name="SkillTrackId"><option value="">Nhờ quản trị phân loại theo chứng chỉ</option>@foreach(var track in (System.Collections.Generic.List<NexusFreelance.Web.Models.SkillTrack>)ViewBag.TrackOptions) { <option value="@track.Id" selected="@(Model.NewCertificate.SkillTrackId == track.Id ? "selected" : null)">@track.Title</option> }</select><p class="form-help">Quản trị sẽ kiểm tra kỹ năng và mức thành thạo. Khi được duyệt, kỹ năng tự xuất hiện trong hồ sơ và các gợi ý ghép nối.</p>
+        <button type="submit" class="btn btn-primary">Gửi để xác minh</button>
+    }
+</section>
+<section class="panel section-small">
+    <div class="heading-row"><h2>Hồ sơ đã gửi</h2><span class="pill">@Model.Certifications.Count</span></div>
+    @if (!Model.Certifications.Any())
+    {
+        <p class="empty">Bạn chưa gửi chứng chỉ bên ngoài nào.</p>
+    }
+    @foreach (var cert in Model.Certifications)
+    {
+        var status = CertificationService.EffectiveStatus(cert, DateTime.Today);
+        var displayStatus = status == "Pending" ? "Đang chờ" : status == "Verified" ? "Đã xác minh" : status == "Rejected" ? "Bị từ chối" : "Đã hết hạn";
+        <article class="list-item">
+            <div>
+                <strong>@cert.Name</strong> <span class="pill">@displayStatus</span>
+                <p class="muted">@cert.Issuer · Cấp ngày @cert.IssuedOn.ToString("dd/MM/yyyy")
+                    @if (cert.ExpiresOn.HasValue) { <span> · Hết hạn @cert.ExpiresOn.Value.ToString("dd/MM/yyyy")</span> }
+                </p>
+                <p class="muted">Gửi xét duyệt: @NexusFreelance.Web.Services.DisplayTime.Vietnam(cert.SubmittedAtUtc)</p>
+                @if (cert.ReviewedAtUtc.HasValue) { <p class="muted">Xử lý: @NexusFreelance.Web.Services.DisplayTime.Vietnam(cert.ReviewedAtUtc.Value)</p> }
+                @if (!string.IsNullOrWhiteSpace(cert.ReviewReason)) { <p>Lý do kiểm duyệt: @cert.ReviewReason</p> }
+                <a href="@cert.EvidenceUrl" target="_blank" rel="noopener noreferrer">Xem minh chứng ↗</a>
+            </div>
+        </article>
+    }
+</section>
+<p><a href="@Url.Action("Index", "Skills")">← Trở về trung tâm kỹ năng</a></p>

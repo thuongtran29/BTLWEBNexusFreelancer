@@ -1,0 +1,14 @@
+@model NexusFreelance.Web.ViewModels.KnowledgePublishForm
+@{ViewBag.Title="Chia sẻ kinh nghiệm chung";var project=(NexusFreelance.Web.Models.Project)ViewBag.Project;}
+<div class="page-head"><span class="eyebrow">BIÊN SOẠN SAU DỰ ÁN</span><h1>Chia sẻ kinh nghiệm chung</h1><p>Nguồn công việc của bạn: @project.Title. Viết nội dung có thể áp dụng cho nhiều dự án để kho tri thức và trợ lý JD tham khảo.</p></div>
+<section class="panel"><p class="alert info">Chỉ viết quy trình, bài học, kỹ năng và tiêu chí chung. Rà lại tên người/khách hàng, thông tin liên hệ, giá/hợp đồng, nội dung chat, liên kết và tệp riêng trước khi chia sẻ. Bản đầu được để trống để bạn tự chọn nội dung phù hợp.</p>
+@using(Html.BeginForm("Share","Knowledge",FormMethod.Post,new{@class="knowledge-form"})) {
+ @Html.AntiForgeryToken() @Html.HiddenFor(m=>m.ProjectId) @Html.HiddenFor(m=>m.ExpectedVersion) @Html.ValidationSummary(false,"",new{@class="validation-summary"})
+ <label for="Title">Tên bài học có thể dùng chung</label>@Html.TextBoxFor(m=>m.Title,new{maxlength=180,minlength=10,required="required",placeholder="Ví dụ: Kiểm tra trùng lịch và trạng thái khi xây luồng đặt hẹn"})
+ <label for="Summary">Tình huống áp dụng</label>@Html.TextAreaFor(m=>m.Summary,new{rows=3,maxlength=800,minlength=30,required="required"})
+ <label for="Practices">Kinh nghiệm và cách làm</label>@Html.TextAreaFor(m=>m.Practices,new{rows=5,maxlength=1500,minlength=30,required="required"})
+ <label for="AcceptanceChecklist">Tiêu chí kiểm tra và nghiệm thu</label>@Html.TextAreaFor(m=>m.AcceptanceChecklist,new{rows=4,maxlength=1200,minlength=30,required="required"})
+ <label for="SkillTags">Kỹ năng/từ khóa chuyên môn</label>@Html.TextBoxFor(m=>m.SkillTags,new{maxlength=400,placeholder="Đặt lịch, API, validation, kiểm thử..."})
+ <label class="checkbox-row">@Html.CheckBoxFor(m=>m.ConfirmGeneric) <span>Tôi có quyền chia sẻ và đã chọn nội dung chung, loại bỏ thông tin riêng của cá nhân và dự án.</span></label>
+ <div class="form-actions"><button class="btn btn-primary" type="submit">Chia sẻ phiên bản @(Model.ExpectedVersion+1)</button><a class="btn btn-outline" href="@Url.Action("Completed")">Để sau</a></div>
+}</section>

@@ -1,0 +1,60 @@
+@model NexusFreelance.Web.ViewModels.FreelancerProfilePage
+@{ ViewBag.Title = "Hồ sơ Freelancer"; }
+<div class="page-head"><span class="eyebrow">FREELANCER PROFILE</span><h1>Hồ sơ &amp; Portfolio</h1><p>Giới thiệu nghề nghiệp và chọn vai trò chính, vai trò phụ từ năng lực đã xác minh còn hiệu lực.</p>@if (Model.Profile.IsPublic) { <a href="@Url.Action("Freelancer", "Talent", new { id = ViewBag.CurrentUserId })">Xem hồ sơ công khai ↗</a> } else { <span class="pill">Hồ sơ đang ẩn khỏi danh bạ</span> }</div>
+@Html.Partial("_AvatarPicker")
+<datalist id="role-suggestions">@foreach (var role in NexusFreelance.Web.Services.IndustryCatalog.Roles) { <option value="@role"></option> }</datalist>
+<section class="panel section-small">
+    <h2>01 · Thông tin chuyên môn</h2>
+    @using (Html.BeginForm("Update", "Profile", FormMethod.Post, new { @class = "form-grid profile-form" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(false, "", new { @class = "alert danger" })
+        <div><label for="CoreRole">Chức danh nghề nghiệp</label><input id="CoreRole" name="CoreRole" value="@Model.Profile.CoreRole" maxlength="100" list="role-suggestions" required placeholder="Backend Developer" aria-describedby="professional-title-help" /><small id="professional-title-help">Thông tin tự giới thiệu, không dùng để cộng điểm vai trò. Chức danh đã nhập trước đây được giữ nguyên.</small></div>
+        <div><label for="CoreSkillTrackId">Vai trò chính đã xác minh</label><select id="CoreSkillTrackId" name="CoreSkillTrackId" aria-describedby="verified-role-help"><option value="">Chưa chọn vai trò chính</option>@foreach(var skill in Model.VerifiedSkills) { <option value="@skill.SkillId" selected="@(Model.Profile.CoreSkillTrackId == skill.SkillId ? "selected" : null)">@skill.Title · @skill.Level/5 · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(skill.Level)</option> }</select><small id="verified-role-help">Chỉ chọn từ chứng chỉ hoặc minh chứng đã duyệt còn hiệu lực. Chưa có minh chứng vẫn có thể lưu hồ sơ giới thiệu; hệ thống chưa cộng điểm vai trò.</small></div>
+        <fieldset class="form-wide" aria-describedby="secondary-role-help"><legend>Vai trò phụ đã xác minh (tùy chọn)</legend>
+            <p id="secondary-role-help" class="form-help">Chọn vai trò chính trước, sau đó chọn các vai trò phụ khác với vai trò chính. Nhiều vai trò không cộng dồn điểm. Năng lực vẫn được đối chiếu riêng theo từng kỹ năng và mức thành thạo.</p>
+            <div class="skill-options">@foreach (var skill in Model.VerifiedSkills) { <label><input type="checkbox" name="SecondarySkillTrackIds" value="@skill.SkillId" checked="@((Model.Profile.SecondarySkillTrackIds ?? new System.Collections.Generic.List<int>()).Contains(skill.SkillId) ? "checked" : null)" /><span>@skill.Title · @skill.Level/5 · @skill.Evidence</span></label> }</div>
+            @if (!Model.VerifiedSkills.Any()) { <p class="empty">Chưa có năng lực đã xác minh còn hiệu lực để chọn vai trò. <a href="@Url.Action("Index", "SkillEvidence")">Bổ sung minh chứng kỹ năng</a>.</p> }
+        </fieldset>
+        if (Model.HasInactiveRoleSelections) { <p class="alert info form-wide" role="status">Một số vai trò đã lưu không còn minh chứng hợp lệ hoặc kỹ năng đã ngừng sử dụng, nên không được tính vào gợi ý hiện tại. Chọn lại từ danh sách còn hiệu lực; lưu hồ sơ sẽ thay thế các lựa chọn cũ.</p> }
+        <p class="form-help form-wide">Vai trò chính và phụ chỉ hỗ trợ ghép nối khi còn minh chứng hợp lệ. Minh chứng hết hạn hoặc bị thu hồi không được dùng cho gợi ý mới; điểm và giải thích đã lưu khi gửi chào giá trước đây vẫn được giữ nguyên.</p>
+        <div><label for="Industry">Nhóm ngành chính</label><select id="Industry" name="Industry">@foreach (var i in NexusFreelance.Web.Services.IndustryCatalog.All) { <option value="@i" @(Model.Profile.Industry == i ? "selected" : "")>@i</option> }</select></div>
+        <div><label for="Location">Địa điểm / múi giờ làm việc</label><input id="Location" name="Location" value="@Model.Profile.Location" maxlength="120" placeholder="TP.HCM · UTC+7 · Làm việc từ xa" /></div>
+        <div class="form-wide"><label for="Bio">Giới thiệu</label><textarea id="Bio" name="Bio" maxlength="1000" rows="4">@Model.Profile.Bio</textarea></div>
+        <p class="form-help">Giới thiệu nên có chuyên môn, kinh nghiệm gần nhất, công cụ sử dụng, giờ làm việc và loại sản phẩm bạn có thể bàn giao. Ví dụ: Backend Developer, 3 năm ASP.NET/SQL Server, xây API và tối ưu truy vấn, nhận dự án từ 10 triệu, làm việc 20 giờ/tuần.</p>
+        <div><label for="YearsExperience">Số năm kinh nghiệm</label><input id="YearsExperience" name="YearsExperience" value="@Model.Profile.YearsExperience" type="number" min="0" max="60" /></div>
+        <div><label for="MinimumProjectBudget">Ngân sách dự án tối thiểu (VND)</label><input id="MinimumProjectBudget" name="MinimumProjectBudget" value="@Model.Profile.MinimumProjectBudget.ToString("0")" type="number" min="0" step="1" /></div>
+        <div><label for="IsPublic">Hiển thị trên danh bạ công khai</label><select id="IsPublic" name="IsPublic"><option value="true" @(Model.Profile.IsPublic ? "selected" : "")>Công khai sản phẩm, huy hiệu và chứng chỉ đã duyệt</option><option value="false" @(!Model.Profile.IsPublic ? "selected" : "")>Ẩn hồ sơ và tên khỏi danh bạ công khai</option></select><p class="muted">Ẩn hồ sơ không làm mất dữ liệu hay quyền tham gia dự án.</p></div>
+        <label class="form-wide"><input type="checkbox" name="IsAvailable" value="true" @(Model.Profile.IsAvailable ? "checked" : "") /> Sẵn sàng nhận công việc</label>
+        <button class="btn btn-primary form-wide" type="submit">Lưu hồ sơ</button>
+    }
+</section>
+
+<section class="panel section-small">
+    <div class="heading-row"><h2>02 · Sản phẩm đã làm (Portfolio)</h2><span class="pill">@Model.Portfolio.Count mục</span></div>
+    <p class="muted">Portfolio được cung cấp bởi Freelancer, chưa có quy trình xác minh độc lập.</p>
+    @if (!Model.Portfolio.Any()) { <div class="empty">Chưa có dự án mẫu nào.</div> }
+    @foreach (var item in Model.Portfolio)
+    {
+        <div class="list-item"><div><h3>@item.Title</h3><p>@item.Summary</p><p class="muted">@item.Role · @item.Skills</p><p>Kết quả: @item.Outcome</p>@if (item.ProjectId.HasValue) { <a class="btn btn-outline" href="@Url.Action("Details", "Projects", new { id = item.ProjectId })">Dự án đã hoàn thành trên Nexus #@item.ProjectId</a> }<a class="btn btn-outline" href="@item.Url" rel="noopener noreferrer" target="_blank">Xem liên kết ↗</a></div>
+            <div class="toolbar"><a class="btn btn-outline" href="@Url.Action("EditPortfolio", new { id = item.Id })">Sửa</a>
+                @using (Html.BeginForm("DeletePortfolio", "Profile", new { id = item.Id }, FormMethod.Post, new { @class = "inline" }))
+                { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Xóa</button> }
+            </div>
+        </div>
+    }
+    <h3>Thêm dự án đã làm</h3>
+    @using (Html.BeginForm("AddPortfolio", "Profile", FormMethod.Post, new { @class = "form-grid portfolio-form" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="form-wide"><label for="Title">Tên dự án</label><input id="Title" name="Title" maxlength="150" required /></div>
+<div><label for="PortfolioRole">Vai trò của bạn trong dự án</label><input id="PortfolioRole" name="Role" maxlength="100" list="role-suggestions" placeholder="Backend Developer" /></div>
+        <div><label for="PortfolioSkills">Kỹ năng / công cụ đã sử dụng</label><input id="PortfolioSkills" name="Skills" maxlength="300" placeholder="ASP.NET MVC, SQL Server, Git, kiểm thử API" /></div>
+        <div><label for="Summary">Mô tả kỹ năng và kết quả</label><textarea id="Summary" name="Summary" maxlength="1500" rows="3" required></textarea></div>
+        <div><label for="PortfolioOutcome">Sản phẩm bàn giao và kết quả đo được</label><textarea id="PortfolioOutcome" name="Outcome" rows="3" maxlength="1000" placeholder="Xây 12 API; giảm thời gian tải từ 3s còn 1s; bàn giao mã nguồn, tài liệu triển khai và kiểm thử."></textarea></div>
+        <div><label for="Url">Đường dẫn HTTPS</label><input id="Url" name="Url" type="url" maxlength="1000" pattern="https://.*" placeholder="https://..." required /></div>
+        <div><label for="PortfolioProject">Liên kết dự án đã hoàn thành (tùy chọn)</label><select id="PortfolioProject" name="ProjectId"><option value="">Không liên kết dự án trên NexusFreelance</option>@foreach(var project in Model.CompletedProjects) { <option value="@project.Id">@project.Title</option> }</select><p class="form-help">Danh sách chỉ có dự án đã hoàn thành mà bạn từng tham gia. Sản phẩm làm bên ngoài vẫn có thể thêm bằng đường dẫn HTTPS.</p></div>
+        <button class="btn btn-primary" type="submit">Thêm sản phẩm vào hồ sơ</button>
+    }
+</section>
+

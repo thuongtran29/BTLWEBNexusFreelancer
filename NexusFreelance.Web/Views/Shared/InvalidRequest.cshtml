@@ -1,0 +1,12 @@
+@{ ViewBag.Title = "Thông tin yêu cầu chưa hợp lệ"; }
+<section class="panel section-small">
+    <span class="eyebrow">KIỂM TRA THÔNG TIN</span>
+    <h1>Chưa thể thực hiện yêu cầu</h1>
+    <p role="alert">Thông tin vừa gửi bị thiếu, không đúng định dạng hoặc đường dẫn không còn hợp lệ. Yêu cầu này chưa được thực hiện.</p>
+    <p>Mở lại trang chức năng, kiểm tra thông tin rồi gửi từ biểu mẫu mới. Nếu đang xác minh email, chọn đúng vai trò và yêu cầu mã mới khi mã đã hết hạn.</p>
+    <div class="form-actions">
+        <a class="btn btn-primary" href="@Url.Action("Login", "Account")">Về đăng nhập</a>
+        <a class="btn btn-outline" href="@Url.Action("ResendVerification", "Account")">Nhận lại mã xác minh</a>
+        <a class="btn btn-outline" href="@Url.Action("ForgotPassword", "Account")">Khôi phục mật khẩu</a>
+    </div>
+</section>

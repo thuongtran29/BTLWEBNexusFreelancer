@@ -1,0 +1,92 @@
+﻿@helper Icon(string name) {
+    <svg class="ui-icon" aria-hidden="true" focusable="false"><use href="@Url.Content("~/Content/icons.svg?v=20261019.2")#@name"></use></svg>
+}
+@{ var assetVersion = "20261020.3"; var hasAccountContext = User.Identity.IsAuthenticated && ViewBag.CurrentUserId != null && ViewBag.CurrentRole != null; }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewBag.Title · NexusFreelance</title>
+    <link rel="icon" type="image/svg+xml" href="@Url.Content("~/Content/favicon.svg")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/fonts.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/site.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/navigation.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/contracts.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/interface.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/journey.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/workflow.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/platform.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/polish.css")?v=@assetVersion" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/realtime.css")?v=20261020.1" />
+</head>
+<body class="@(hasAccountContext ? "workspace-layout" : "public-layout")" data-account-id="@(hasAccountContext ? ViewBag.CurrentUserId : 0)" data-auth-known="@((hasAccountContext || !User.Identity.IsAuthenticated) ? "true" : "false")" data-nav-role="@ViewBag.CurrentRole" data-nav-controller="@ViewContext.RouteData.Values["controller"]" data-nav-action="@ViewContext.RouteData.Values["action"]">
+    <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+    <header class="header">
+        <div class="container nav">
+            <div class="nav-brand-group">
+                @if (hasAccountContext) {
+                    <button id="navigation-toggle" class="icon-button" type="button" aria-controls="app-sidebar" aria-expanded="true" aria-label="Thu gọn điều hướng" title="Thu gọn điều hướng">@Icon("menu")</button>
+                }
+                <a class="brand" href="@Url.Action("Index", "Home")" aria-label="NexusFreelance · Trang chủ"><span class="brand-icon">N</span><span class="brand-wordmark">nexus<span class="brand-light">freelance</span></span></a>
+            </div>
+            @if(hasAccountContext) { <div class="nav-context"><span aria-hidden="true">/</span><span>@ViewBag.Title</span></div> }
+            <nav class="top-navigation" aria-label="Điều hướng chính">
+                <a class="top-link" href="@Url.Action("Index", "Home")" aria-label="Khám phá dự án" title="Khám phá dự án">@Icon("search")<span>Khám phá</span></a>
+                <a class="top-link" href="@Url.Action("Index", "Talent")" aria-label="Chuyên gia và nhóm" title="Chuyên gia và nhóm">@Icon("contact-round")<span>Chuyên gia</span></a>
+                @if (hasAccountContext)
+                {
+                    <a class="icon-button" href="@Url.Action("Index", "Notifications")" aria-label="Thông báo · @(ViewBag.UnreadCount ?? 0) chưa đọc" title="Thông báo">@Icon("bell")@if((int)(ViewBag.UnreadCount ?? 0) > 0) { <span class="notification-count" aria-hidden="true">@((int)ViewBag.UnreadCount > 99 ? "99+" : Convert.ToString(ViewBag.UnreadCount))</span> }</a>
+                    <details class="account-menu">
+                        <summary aria-label="Mở menu tài khoản"><span class="account-avatar" aria-hidden="true">@Html.Partial("_Avatar", new NexusFreelance.Web.ViewModels.AvatarView { Id=(int)ViewBag.CurrentUserId, Name=(string)ViewBag.CurrentName, Size="small" })</span><span class="account-identity"><span class="account-name">@ViewBag.CurrentName</span><small>@((string)ViewBag.CurrentRole == "Client" ? "Khách hàng" : (string)ViewBag.CurrentRole == "Freelancer" ? "Freelancer" : "Quản trị viên")</small></span>@Icon("chevron")</summary>
+                        <div class="account-popover">
+                            <strong>@ViewBag.CurrentName</strong>
+                            <small>@((string)ViewBag.CurrentRole == "Client" ? "Khách hàng" : (string)ViewBag.CurrentRole == "Freelancer" ? "Freelancer" : "Quản trị viên")</small>
+                            <a href="@Url.Action("Index", (string)ViewBag.CurrentRole == "Admin" ? "Admin" : "Dashboard")">@Icon("grid") Tổng quan</a>
+                            @if((string)ViewBag.CurrentRole != "Admin") { <a href="@Url.Action("Index", "Messages")">@Icon("message-circle") Hội thoại</a> }
+                            <a href="@Url.Action("Security", "Account")">@Icon("lock-keyhole") Tài khoản &amp; bảo mật</a>
+                            @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { data_confirm = "Bạn có chắc muốn đăng xuất?" })) {
+                                @Html.AntiForgeryToken()
+                                <button type="submit">@Icon("logout") Đăng xuất</button>
+                            }
+                        </div>
+                    </details>
+                }
+                else
+                {
+                    <a class="top-link nav-help" href="@Url.Action("HowItWorks", "Home")" title="Cách hoạt động">@Icon("route")<span>Cách hoạt động</span></a>
+                    <a class="btn btn-outline" href="@Url.Action("Login", "Account")">@Icon("log-in") Đăng nhập</a>
+                    <a class="btn btn-primary nav-register" href="@Url.Action("Register", "Account")">@Icon("user-plus") Bắt đầu ngay</a>
+                }
+            </nav>
+        </div>
+    </header>
+    <div class="container @(hasAccountContext ? "app-shell" : "")">
+        @if (hasAccountContext) { @Html.Partial("_Sidebar") }
+        <button class="navigation-scrim" type="button" tabindex="-1" aria-label="Đóng điều hướng" hidden></button>
+        <main class="main @(hasAccountContext ? "app-content" : "")" id="main-content" tabindex="-1">
+            @Html.Partial("_PageBackLink")
+            @if (TempData["Notice"] != null) { <div role="status" class="alert success">@TempData["Notice"]</div> }
+            @if (TempData["Error"] != null) { <div role="alert" class="alert danger">@TempData["Error"]</div> }
+            @RenderBody()
+        </main>
+    </div>
+    <footer><div class="container footer-inner"><strong>NEXUSFREELANCE</strong> <span>Build Teams, Not Just Contracts</span></div></footer>
+    <script src="@Url.Content("~/Content/navigation.js")?v=@assetVersion"></script>
+    <script src="@Url.Content("~/Content/interactions.js")?v=@assetVersion"></script>
+    <script src="@Url.Content("~/Content/evidence-form.js")?v=@assetVersion"></script>
+    <script src="@Url.Content("~/Content/milestone-editor.js")?v=@assetVersion"></script>
+    <script src="@Url.Content("~/Content/platform.js")?v=@assetVersion"></script>
+    <script src="@Url.Content("~/Content/vendor/jquery-3.7.1.min.js")"></script>
+    <script src="@Url.Content("~/Content/submission.js")?v=@assetVersion"></script>
+    <script src="@Url.Content("~/Content/realtime.js")?v=20261020.1"></script>
+    <script src="@Url.Content("~/Content/avatar.js")?v=@assetVersion"></script>
+    @RenderSection("scripts", required: false)
+</body>
+</html>
+
+
+
+
+
+

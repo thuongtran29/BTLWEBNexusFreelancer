@@ -1,0 +1,30 @@
+@model System.Collections.Generic.List<NexusFreelance.Web.ViewModels.GroupOpportunity>
+<section class="panel section-small" id="group-opportunities">
+ <span class="eyebrow">TÌM NHÓM CÙNG THỰC HIỆN</span><h2>Nhóm đang thiếu vai trò phù hợp với bạn</h2>
+ <p>Những nhóm đã mở nhu cầu cho dự án này và còn thiếu vị trí có kỹ năng khớp minh chứng của bạn. Đề nghị tham gia được gửi đến trưởng nhóm; lời mời cần bạn xác nhận.</p>
+ @if (!Model.Any()) { <p class="empty">Chưa có nhóm mở nhu cầu phù hợp với minh chứng hiện tại. Bạn có thể cập nhật năng lực hoặc tham gia nhóm trước khi trưởng nhóm gửi đề xuất.</p> }
+ <div class="match-grid">
+ @foreach (var item in Model)
+ {
+  <article class="match-card">
+   <div class="heading-row"><h3>@item.GroupName</h3><span class="match-percent">@item.Score<small>/100</small></span></div>
+   <p>Đại diện: @item.LeaderName</p><p><strong>@item.RoleTitle</strong> · Còn thiếu @item.Missing người</p>
+   <ul>@foreach (var reason in item.Reasons) { <li>@reason</li> }</ul>
+   <a class="btn btn-outline" href="@Url.Action("Group", "Talent", new { id = item.GroupId })">Xem nhóm</a>
+   @if (item.RequestStatus == null)
+   {
+    <form method="post" action="@Url.Action("ApplyToGroup", "GroupRecruitment", new { id = item.RecruitmentId })" class="stack">
+     @Html.AntiForgeryToken()<input type="hidden" name="roleId" value="@item.RoleId"/>
+     <label for="group-pitch-@item.RecruitmentId">Bạn có thể đảm nhận phần việc này thế nào?</label>
+     <textarea id="group-pitch-@item.RecruitmentId" name="pitch" minlength="20" maxlength="600" rows="3" required></textarea>
+     <button class="btn btn-primary" type="submit">Đề nghị tham gia cho vị trí này</button>
+    </form>
+   }
+   else
+   {
+    <p class="alert info">@(item.RequestStatus == "Pending" ? "Đã gửi, chờ trưởng nhóm phản hồi." : item.RequestStatus == "Invited" ? "Đã có lời mời. Mở Nhóm cộng tác để xác nhận." : "Đề nghị trước đã được phản hồi; xem nhóm hoặc nhu cầu khác phù hợp.")</p>
+   }
+  </article>
+ }
+ </div>
+</section>

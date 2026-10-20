@@ -1,0 +1,37 @@
+@model NexusFreelance.Web.ViewModels.AdminUsersPage
+@{ ViewBag.Title = "Quản lý tài khoản"; }
+<section class="page-header"><h1>Quản lý tài khoản</h1><p>@Model.Total kết quả. Chọn “Quản lý” để khóa hoặc mở khóa tài khoản Client và Freelancer.</p></section>
+<div class="action-group"><a class="btn btn-outline" href="@Url.Action("Index")">Tổng quan quản trị</a><a class="btn btn-outline" href="@Url.Action("Audit")">Xem nhật ký thay đổi</a></div>
+@using (Html.BeginForm("Users", "Admin", FormMethod.Get, new { @class = "filter-toolbar" })) {
+    <div class="filter-field"><label for="q">Tìm theo tên hoặc email</label><input id="q" name="q" type="search" value="@Model.Query" maxlength="120" placeholder="Nhập tên hoặc địa chỉ email…" /></div>
+    <button type="submit" class="btn btn-primary">Tìm tài khoản</button>
+    if (!String.IsNullOrWhiteSpace(Model.Query)) { <a class="btn btn-outline" href="@Url.Action("Users")">Xóa bộ lọc</a> }
+}
+@if (Model.Users.Count == 0) { <div class="panel empty"><h2>Không tìm thấy tài khoản</h2><p>Thử tên ngắn hơn hoặc kiểm tra lại địa chỉ email.</p></div> }
+else {
+    <section class="panel table-panel" aria-label="Danh sách tài khoản">
+        <p class="table-hint">↔ Kéo ngang trong bảng để xem đủ các cột.</p><div class="table-scroll" tabindex="0" role="region" aria-label="Bảng tài khoản, có thể cuộn ngang trên màn hình nhỏ">
+            <table class="data-table"><caption>Trang @Model.Page / @Model.PageCount · Tài khoản quản trị được bảo vệ khỏi thao tác khóa tại đây.</caption>
+                <thead><tr><th scope="col">Tài khoản</th><th scope="col">Vai trò</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr></thead>
+                <tbody>@foreach (var user in Model.Users) {
+                    <tr><td class="cell-account"><a href="@Url.Action("UserProfile", new { id = user.Id })"><strong>@user.Name</strong></a><small>@user.Email</small><small><a href="@Url.Action("UserProfile", new { id = user.Id })">Kiểm tra hồ sơ →</a></small></td><td>@(user.Role == "Client" ? "Khách hàng" : user.Role == "Admin" ? "Quản trị" : "Freelancer")</td><td><span class="status-badge @(user.IsSuspended ? "is-danger" : "")">@(user.IsSuspended ? "Đang khóa" : "Hoạt động")</span></td>
+                        <td class="cell-action">@if (user.Role != "Admin") {
+                            <details class="row-controls"><summary class="btn btn-outline" aria-label="Quản lý tài khoản @user.Name">Quản lý tài khoản ▾</summary>
+                            @using (Html.BeginForm("ChangeStatus", "Admin", FormMethod.Post, new { data_confirm = user.IsSuspended ? "Mở khóa tài khoản này?" : "Khóa tài khoản này? Người dùng sẽ không thể tiếp tục truy cập." })) {
+                                @Html.AntiForgeryToken()<input type="hidden" name="Id" value="@user.Id" /><input type="hidden" name="Suspend" value="@(!user.IsSuspended ? "true" : "false")" />
+                                <label for="reason-@user.Id">Lý do thay đổi</label><input id="reason-@user.Id" name="Reason" required minlength="5" maxlength="200" placeholder="Ít nhất 5 ký tự" />
+                                <button class="btn @(user.IsSuspended ? "btn-primary" : "btn-danger")" type="submit">@(user.IsSuspended ? "Xác nhận mở khóa" : "Xác nhận khóa")</button>
+                            }</details>
+                        } else { <span class="muted">Tài khoản quản trị</span> }</td>
+                    </tr>
+                }</tbody>
+            </table>
+        </div>
+    </section>
+}
+<nav class="pagination" aria-label="Phân trang tài khoản">
+    @if (Model.Page > 1) { <a href="@Url.Action("Users", new { q = Model.Query, page = Model.Page - 1 })">← Trang trước</a> }
+    <span>Trang @Model.Page / @Model.PageCount</span>
+    @if (Model.Page < Model.PageCount) { <a href="@Url.Action("Users", new { q = Model.Query, page = Model.Page + 1 })">Trang sau →</a> }
+</nav>
+

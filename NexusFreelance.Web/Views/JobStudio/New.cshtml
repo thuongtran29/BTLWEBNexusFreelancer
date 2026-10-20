@@ -1,0 +1,62 @@
+@model NexusFreelance.Web.ViewModels.JobIdeaForm
+@{
+    ViewBag.Title = "Nhập ý tưởng · Job Studio";
+    var selectedProvider = NexusFreelance.Web.Services.JobDraftGeneratorFactory.SelectedProvider;
+    var providerLabel = selectedProvider == "Gemini" ? "Google Gemini" : "OpenAI";
+    var externalAiAvailable = NexusFreelance.Web.Services.JobDraftGeneratorFactory.IsExternalAiConfigured;
+}
+<div class="page-head">
+    <a href="@Url.Action("Create", "Projects")">← Tạo dự án</a><span class="eyebrow">TẠO DỰ ÁN / AI JOB STUDIO</span><h1>Từ ý tưởng đến bản yêu cầu</h1>
+    <p>@(externalAiAvailable
+        ? "Mô tả nhu cầu để tạo JD có mục tiêu, phạm vi, sản phẩm bàn giao, tiêu chí nghiệm thu và vị trí cần tuyển. Bạn có thể sửa toàn bộ kết quả trước khi tạo dự án."
+        : "AI hiện chưa được cấu hình đầy đủ. Hệ thống hỗ trợ Gemini và OpenAI. Bạn có thể tạo mẫu nội bộ để tự biên soạn JD; mẫu này không phải kết quả AI.")</p>
+</div>
+<section class="panel form-panel">
+@using (Html.BeginForm("Generate", "JobStudio", FormMethod.Post, new { data_ai_generate = "true" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="ExternalAiProvider" value="@selectedProvider" />
+    @Html.ValidationSummary(false, "", new { @class = "error-list" })
+    <label for="Industry">Nhóm ngành</label><select id="Industry" name="Industry">@foreach (var industry in NexusFreelance.Web.Services.IndustryCatalog.All) { <option value="@industry" @(Model.Industry == industry ? "selected" : "")>@industry</option> }</select>
+    <label for="Idea">Mô tả công việc cần thuê (tối thiểu 10 ký tự)</label>
+    @Html.TextAreaFor(m => m.Idea, new { rows = "6", required = "required", maxlength = "1500",
+        aria_describedby = "brief-help", placeholder = "Ví dụ: Tiệm bánh cần logo và nhận diện cho túi giấy, hộp bánh. Cần tệp vector có thể sửa, logo rõ khi in một màu; chưa có quy chuẩn màu. Muốn xem phương án trước khi chốt thiết kế." })
+    <p id="brief-help" class="form-help">Nêu người sử dụng, vấn đề cần giải quyết, đầu việc, đầu ra và ràng buộc đã biết. Điểm chưa rõ có thể để trống để bổ sung sau; tránh nhập thông tin nhạy cảm không cần thiết.</p>
+    @Html.ValidationMessageFor(m => m.Idea)
+    <div class="form-grid">
+        <div><label for="ProjectType">Loại dự án</label>
+            <select id="ProjectType" name="ProjectType">
+                <option value="TEAM" @(Model.ProjectType == "TEAM" ? "selected" : "")>TEAM</option>
+                <option value="SOLO" @(Model.ProjectType == "SOLO" ? "selected" : "")>SOLO</option>
+                <option value="ENTERPRISE" @(Model.ProjectType == "ENTERPRISE" ? "selected" : "")>ENTERPRISE</option>
+            </select>
+        </div>
+        <div><label for="Budget">Ngân sách dự kiến (VND)</label>@Html.TextBoxFor(m => m.Budget,
+            new { type = "number", min = "1", step = "1", required = "required" })</div>
+        <div><label for="Deadline">Hạn dự kiến</label>@Html.TextBoxFor(m => m.Deadline,
+            "{0:yyyy-MM-dd}", new { type = "date" })</div>
+    </div>
+    <label for="AdditionalInstructions">Ưu tiên và yêu cầu bổ sung (tùy chọn)</label>@Html.TextAreaFor(m => m.AdditionalInstructions, new { rows="2", maxlength="600", placeholder="Ví dụ: Ưu tiên tệp dễ chỉnh sửa, cần duyệt bản mẫu trước, không bao gồm thiết kế website..." })
+    @Html.ValidationMessageFor(m => m.AdditionalInstructions)
+    <label class="check-row">@Html.CheckBoxFor(m => m.UseSharedKnowledge)<span>Tham khảo bài học chung đã được chia sẻ sau các dự án hoàn thành.</span></label>
+    <p class="form-help">Nguồn dùng chung áp dụng cho mẫu nội bộ và AI. <a href="@Url.Action("Index","Knowledge")">Xem kho tri thức</a>. Hệ thống chọn tối đa 3 bài liên quan; brief hiện tại quyết định phạm vi.</p>
+    if (externalAiAvailable)
+    {
+        <p class="form-help">Nhà cung cấp đang dùng: <strong>@providerLabel</strong>. Chỉ gửi dữ liệu khi bạn đánh dấu đồng ý bên dưới.</p>
+        if (selectedProvider == "Gemini") {
+            <p class="alert info">Gemini có Free Tier với hạn mức do Google quản lý. Giữ project Google ở Free Tier để demo; hệ thống không tự bật thanh toán hoặc đổi sang OpenAI. Dữ liệu gửi lên Free Tier có thể được Google dùng để cải thiện sản phẩm; ưu tiên dữ liệu minh họa và bài học chung.</p>
+        }
+        <label class="check-row">@Html.CheckBoxFor(m => m.UseProjectKnowledge)<span>Tham khảo tri thức từ các dự án đã hoàn thành của tôi, cùng nhóm ngành khi dùng AI.</span></label>
+        <p class="form-help">Hệ thống chọn tối đa 3 bản tri thức liên quan, chỉ lấy tóm tắt, công cụ và bài học. Nếu chưa có, AI dựa trên mô tả của bạn. Mẫu nội bộ chỉ tham khảo bài học chung đã chia sẻ; nguồn riêng này dùng khi bạn đồng ý sử dụng AI.</p>
+        <div class="panel" style="margin:1rem 0;padding:1rem">
+            <label for="UseExternalAi" style="display:flex;align-items:flex-start;gap:.6rem">
+                @Html.CheckBoxFor(m => m.UseExternalAi, new { style = "width:auto;flex:none;margin-top:.2rem" })
+                <span>Tôi đồng ý gửi mô tả, yêu cầu bổ sung, ngành, loại dự án, thời hạn, ngân sách và trích đoạn tri thức đã chọn tới @providerLabel để tạo JD.
+                    Không chọn ô này thì chỉ tạo mẫu nội bộ theo quy tắc, không dùng AI.</span>
+            </label>
+        </div>
+    }
+    <p class="form-help" data-ai-progress role="status" aria-live="polite">@(externalAiAvailable ? "Tạo bằng AI có thể mất tới 90 giây. Chỉ lưu kết quả hợp lệ; nếu AI gặp lỗi, hệ thống không lưu mẫu thay thế." : "Mẫu nội bộ là khung nội dung theo quy tắc. Bạn cần bổ sung yêu cầu chuyên môn và vị trí tuyển dụng trước khi sử dụng.")</p>
+    <button class="btn btn-primary" type="submit">@(externalAiAvailable ? "Tạo bản nháp JD →" : "Tạo mẫu nội bộ →")</button>
+}
+</section>

@@ -1,0 +1,19 @@
+@model System.Collections.Generic.List<NexusFreelance.Web.Models.ProjectAbuseReport>
+@{ ViewBag.Title = "Báo cáo của tôi"; }
+<section class="page-head"><span class="eyebrow">COMMUNITY SAFETY</span><h1>Báo cáo đã gửi</h1><p class="muted">Các báo cáo chỉ hiển thị với bạn và quản trị viên.</p></section>
+<div class="panel">
+    @if (Model.Count == 0) { <p class="muted">Bạn chưa gửi báo cáo nào.</p> }
+    @foreach (var r in Model)
+    {
+        <article class="report-row">
+            <div class="heading-row"><h2>@r.Project.Title</h2><span class="pill">@r.Status</span></div>
+            <p class="muted">Gửi @r.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") (UTC) · @r.Category</p>
+            <p class="description">@r.Details</p>
+            @if (r.ReviewedAtUtc.HasValue)
+            {
+                <p class="muted">Phản hồi @r.ReviewedAtUtc.Value.ToString("dd/MM/yyyy HH:mm") (UTC)</p>
+                <p>@r.Resolution</p>
+            }
+        </article>
+    }
+</div>

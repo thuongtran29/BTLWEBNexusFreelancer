@@ -1,0 +1,14 @@
+.live-status { color: var(--muted, #586a60); font-size: .85rem; margin: 0 0 1rem; display: flex; align-items: center; gap: .5rem; min-height: 1.25rem; }
+.live-status:before { content: ''; width: .5rem; height: .5rem; flex: 0 0 .5rem; border-radius: 50%; background: #b57b24; }
+.live-status[data-state="connected"]:before { background: #28724a; }
+.live-status[data-state="stopped"]:before { background: #aa3c3c; }
+.live-new-messages { margin-bottom: 1rem; }
+.live-new-messages[hidden] { display: none; }
+[data-realtime-channel] .chat-thread { max-height: min(60vh, 640px); overflow-y: auto; overflow-x: hidden; padding: .25rem; }
+.chat-message.is-mine { border-left: 3px solid #709d63; }
+.chat-thread .chat-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+[data-live-send-status] { margin: .75rem 0 1rem; min-height: 1.4rem; overflow-wrap: anywhere; }
+.realtime-indicator { position: absolute; bottom: 2px; left: 2px; width: .4rem; height: .4rem; border-radius: 50%; background: #b57b24; }
+[data-notification-new][hidden] { display: none; }
+.realtime-indicator[data-state="connected"] { background: #28724a; }
+.realtime-indicator[data-state="stopped"] { background: #aa3c3c; }

@@ -1,0 +1,126 @@
+﻿@model NexusFreelance.Web.ViewModels.GroupDetailsPage
+@using System.Linq
+@using NexusFreelance.Web.Models
+@{ ViewBag.Title = Model.Group.Name;
+   var bids = (ViewBag.GroupBids as System.Collections.Generic.List<GroupBid>) ?? new System.Collections.Generic.List<GroupBid>();
+   var dashboard = (ViewBag.GroupDashboard as NexusFreelance.Web.ViewModels.GroupDashboardData) ?? new NexusFreelance.Web.ViewModels.GroupDashboardData(); }
+<div class="page-head"><span class="eyebrow">FREELANCER GROUP</span><h1>@Model.Group.Name</h1>
+    <p>@Model.Group.Description</p><p>@Model.Group.Industry · @(Model.Group.WorkStyle == "Onsite" ? "Trực tiếp" : Model.Group.WorkStyle == "Hybrid" ? "Kết hợp" : "Từ xa") · Quy mô mục tiêu: @(Model.Group.TargetSize ?? 5) người</p><p>@Model.Group.Specialties</p><p class="muted">@Model.Group.Collaboration</p><p>Leader: <strong>@Model.Group.Leader.Name</strong></p>
+    <a href="@Url.Action("Index")">← Danh sách nhóm</a>
+    @if(Model.Group.IsPublic != false && Model.IsLeaderVisibleInDirectory) { <a class="btn btn-outline" href="@Url.Action("Group", "Talent", new { id=Model.Group.Id })">Xem hồ sơ nhóm công khai ↗</a> }
+    @if (Model.Group.IsPublic != false && Model.IsLeaderVisibleInDirectory) { <span>·</span> <a href="@Url.Action("Group", "Talent", new { id = Model.Group.Id })">Xem hồ sơ nhóm công khai ↗</a> }
+</div>
+@if (Model.IsLeader)
+{
+    <section class="panel section-small"><h2>Quyền riêng tư của nhóm</h2>
+    @using (Html.BeginForm("UpdateVisibility", "Groups", new { id = Model.Group.Id }, FormMethod.Post, new { @class = "form-grid" }))
+    {
+        @Html.AntiForgeryToken()
+        <label for="isPublic">Trạng thái danh bạ</label>
+        <select name="isPublic" id="isPublic"><option value="true" @(Model.Group.IsPublic != false ? "selected" : "")>Công khai</option><option value="false" @(Model.Group.IsPublic == false ? "selected" : "")>Riêng tư</option></select>
+        <p class="muted">Khi công khai, chỉ thành viên đang hoạt động và cho phép hiển thị hồ sơ mới được giới thiệu. Nếu Leader ẩn hồ sơ cá nhân, nhóm cũng bị ẩn khỏi danh bạ.</p>
+        if (Model.Group.IsPublic != false && !Model.IsLeaderVisibleInDirectory) { <p class="muted">Nhóm đang bị ẩn vì hồ sơ Freelancer của Leader đặt ở chế độ riêng tư.</p> }
+        <button class="btn btn-outline" type="submit">Lưu quyền riêng tư</button>
+    }
+    </section>
+}
+<section class="panel section-small"><h2>Core skill đã xác minh của nhóm</h2><p class="muted">Hợp các kỹ năng còn hiệu lực từ thành viên đang hoạt động; không cộng dồn mức độ của nhiều người thành mức chuyên gia.</p><div class="skill-chips">@foreach(var skill in (System.Collections.Generic.List<NexusFreelance.Web.ViewModels.VerifiedSkillRow>)ViewBag.GroupSkills) { <span class="pill">@skill.Title · @skill.Level/5 · @NexusFreelance.Web.Services.SmartMatchingService.LevelName(skill.Level)</span> }</div></section>
+@if(Model.IsLeader) { <section class="panel section-small"><details><summary>Chỉnh sửa hồ sơ và cách phối hợp của nhóm</summary>
+@using(Html.BeginForm("Update", "Groups", new { id=Model.Group.Id }, FormMethod.Post, new { @class="form-grid" })) {
+@Html.AntiForgeryToken()<div><label for="EditName">Tên nhóm</label><input id="EditName" name="Name" value="@Model.Group.Name" maxlength="120" required /></div><div><label for="EditIndustry">Ngành chuyên môn</label><select id="EditIndustry" name="Industry">@foreach(var industry in NexusFreelance.Web.Services.IndustryCatalog.All) { <option value="@industry" selected="@(Model.Group.Industry==industry ? "selected" : null)">@industry</option> }</select></div>
+<div class="full-width"><label for="EditDescription">Giới thiệu chuyên môn</label><textarea id="EditDescription" name="Description" maxlength="1000" required>@Model.Group.Description</textarea></div>
+<div><label for="EditWorkStyle">Hình thức phối hợp</label><select id="EditWorkStyle" name="WorkStyle">@foreach(var mode in new[] {"Remote","Hybrid","Onsite"}) { <option value="@mode" selected="@(Model.Group.WorkStyle==mode ? "selected" : null)">@(mode=="Remote" ? "Từ xa" : mode=="Hybrid" ? "Kết hợp" : "Trực tiếp")</option> }</select></div>
+<div><label for="EditSize">Quy mô mục tiêu</label><input id="EditSize" type="number" name="TargetSize" value="@(Model.Group.TargetSize ?? 5)" min="1" max="50" required /></div>
+<div><label for="EditBudget">Ngân sách dự án tối thiểu (VND)</label><input id="EditBudget" type="number" name="MinimumBudget" value="@((Model.Group.MinimumBudget ?? 0).ToString("0"))" min="0" max="999999999999" step="1" /></div>
+<div><label for="EditSpecialties">Dịch vụ / thế mạnh</label><textarea id="EditSpecialties" name="Specialties" maxlength="300">@Model.Group.Specialties</textarea></div><div><label for="EditCollaboration">Cách phối hợp / giờ liên hệ</label><textarea id="EditCollaboration" name="Collaboration" maxlength="300">@Model.Group.Collaboration</textarea></div><button class="btn btn-primary" type="submit">Lưu thông tin nhóm</button>
+}
+</details></section> }
+<section class="panel section-small">
+    <h2>Thành viên và lời mời</h2>
+    <div class="group-kpis" aria-label="Thống kê nhóm">
+        <div class="group-kpi"><strong>@Model.Members.Count(m => m.Status == "Active")</strong><span>Thành viên</span></div>
+        <div class="group-kpi"><strong>@Model.Members.Count(m => m.Status == "Invited")</strong><span>Chờ phản hồi</span></div>
+        <div class="group-kpi"><strong>@dashboard.Projects.Count</strong><span>Dự án được phân công</span></div>
+    </div>
+    @foreach (var member in Model.Members)
+    {
+        <div class="list-item"><div><strong>@member.User.Name</strong> · @member.User.Email
+            <p>Chuyên môn: @(dashboard.MemberRoles.ContainsKey(member.UserAccountId) && !string.IsNullOrWhiteSpace(dashboard.MemberRoles[member.UserAccountId]) ? dashboard.MemberRoles[member.UserAccountId] : "Chưa cập nhật")</p>
+            <p class="muted">@(member.Status == "Active" ? "Đã tham gia" : "Chờ phản hồi")</p></div>
+            @if (Model.IsLeader && member.Status == "Active" && member.UserAccountId != Model.Group.LeaderId)
+            {
+                using (Html.BeginForm("Remove", "Groups", new { id = Model.Group.Id, memberId = member.UserAccountId }, FormMethod.Post, new { @class = "inline" }))
+                { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Loại thành viên</button> }
+            }
+        </div>
+    }
+    @if (Model.IsLeader)
+    {
+        <h3>Mời Freelancer</h3>
+        using (Html.BeginForm("Invite", "Groups", FormMethod.Post, new { @class = "form-grid" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="GroupId" value="@Model.Group.Id" />
+            <label for="Email">Email tài khoản Freelancer</label><input type="email" name="Email" id="Email" maxlength="200" required />
+            <button class="btn btn-primary" type="submit">Gửi lời mời</button>
+        }
+    }
+    else
+    {
+        using (Html.BeginForm("Leave", "Groups", new { id = Model.Group.Id }, FormMethod.Post))
+        { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Rời nhóm</button> }
+    }
+</section>
+<section class="panel section-small" aria-labelledby="group-progress-title">
+    <h2 id="group-progress-title">Dự án và tiến độ nhóm (@dashboard.Projects.Count)</h2>
+    <p class="muted">Chỉ hiện dự án đã nhận qua Proposal nhóm mà bạn đang là thành viên Team. Tối đa 20 dự án gần đây.</p>
+    @if (!dashboard.Projects.Any())
+    {
+        <p class="empty">Chưa có dự án nhóm nào mà bạn được phân công trong Workspace.</p>
+    }
+    @foreach (var project in dashboard.Projects)
+    {
+        <article class="list-item group-project">
+            <div>
+                <h3>@project.ProjectTitle</h3>
+                <p class="muted">Trạng thái: @project.ProjectStatus · @project.DoneTaskCount/@project.TaskCount Task hoàn tất</p>
+                <progress value="@project.DoneTaskCount" max="@System.Math.Max(1, project.TaskCount)" aria-label="Tiến độ @project.ProjectTitle"></progress>
+                <p class="muted">Đóng góp đã được đánh giá: @project.ContributorCount thành viên · @project.EvidenceScoreTotal điểm bằng chứng.</p>
+                <div class="toolbar">
+                    <a class="btn btn-outline" href="@Url.Action("Index", "Workspace", new { id = project.WorkspaceId })">Mở Workspace</a>
+                    @if (project.ProjectStatus == "Completed" && project.HasProjectMemory)
+                    {
+                        <a class="btn btn-outline" href="@Url.Action("Index", "ProjectMemory", new { projectId = project.ProjectId })">Xem tri thức dự án</a>
+                    }
+                    else if (project.ProjectStatus == "Completed")
+                    {
+                        <span class="muted">Tri thức dự án chưa được Client tạo</span>
+                    }
+                </div>
+            </div>
+        </article>
+    }
+    <p class="muted">Điểm bằng chứng dựa trên các bản ghi Contribution sau đánh giá, không phải thước đo năng suất tuyệt đối. Tri thức dự án chỉ truy cập được theo quyền thành viên Team.</p>
+</section>
+<section class="panel section-small"><h2>Proposal nhóm (@bids.Count)</h2>
+    @if (!bids.Any()) { <p class="muted">Nhóm chưa gửi Proposal chung.</p> }
+    @foreach (var bid in bids)
+    {
+        <div class="list-item"><div><strong>@bid.Project.Title</strong>
+            <p class="muted">Trạng thái @NexusFreelance.Web.Services.WorkLabels.Proposal(bid.Status) · @bid.CreatedAtUtc.ToString("dd/MM/yyyy") · @bid.DeliveryDays ngày</p>@Html.Partial("_PlanSummary",bid.MilestonePlan??"")</div>
+            @if (Model.IsLeader && (bid.Status == "Pending" || bid.Status == "Shortlisted"))
+            {
+                using (Html.BeginForm("Withdraw", "GroupBids", new { id = bid.Id }, FormMethod.Post, new {data_confirm="Rút đề xuất của cả nhóm? Lịch sử và đội hình đã nộp vẫn được giữ."}))
+                { @Html.AntiForgeryToken()<button type="submit" class="btn btn-outline">Rút đề xuất của nhóm</button> }
+            }
+        </div>
+    }
+</section>
+<section class="panel section-small"><h2>Lịch sử nhóm</h2>
+    @foreach (var item in Model.Events)
+    { <div class="list-item"><span>@item.Description · @item.Actor.Name</span><small>@item.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm") UTC</small></div> }
+</section>
+
+@if(Model.IsLeader){<section class="panel section-small"><h2>Chuẩn bị đội hình theo vị trí của dự án</h2><p>Chọn dự án đang tuyển để đối chiếu vị trí còn thiếu, xem ứng viên phù hợp và mở nhu cầu để Freelancer gửi đề nghị.</p>
+@using(Html.BeginForm("Manage","GroupRecruitment",FormMethod.Get,new{@class="form-grid"})){<input type="hidden" name="groupId" value="@Model.Group.Id"/><div><label for="staff-project">Dự án đang tuyển</label><select id="staff-project" name="projectId" required><option value="">Chọn dự án...</option>@foreach(var p in (System.Collections.Generic.List<Project>)ViewBag.StaffingProjects){<option value="@p.Id">@p.Title</option>}</select></div><div class="form-actions"><button class="btn btn-primary" type="submit">Đối chiếu đội hình &amp; gợi ý người</button></div>}
+@foreach(var plan in (System.Collections.Generic.List<GroupProjectRecruitment>)ViewBag.StaffingPlans){<div class="list-item"><div><strong>@plan.Project.Title</strong><p>@(plan.Status=="Open"?"Đã mở nhu cầu; hiệu lực theo trạng thái dự án và quy mô nhóm":"Đã đóng nhu cầu")</p></div><a class="btn btn-outline" href="@Url.Action("Manage","GroupRecruitment",new{groupId=Model.Group.Id,projectId=plan.ProjectId})">Xem nhu cầu &amp; đề nghị</a></div>}</section>}
